@@ -295,4 +295,36 @@ side-by-side evaluation of both models, and conditional save of whichever model 
 - XGBoost won and saved to models/xgboost_model.pkl
 - AUC-ROC of 0.81 is considered strong for social science prediction problems
 
-**Next:** Prompt 011 — SHAP Explainability Layer
+## Prompt 011 — SHAP Explainability Layer
+**Date:** 2026-03-27  
+**Purpose:** Generate per-tract SHAP explanations showing top 3 driving factors 
+for every prediction in the modeling dataset.
+
+**Prompt:**  
+Write a Python script called explain_model.py that loads models/xgboost_model.pkl 
+and models/feature_columns.pkl using joblib, then loads data/processed/modeling_dataset.csv. 
+Use the shap library to compute SHAP values for every row in the dataset. For each tract 
+output the top 3 features driving the prediction with their SHAP values. Save a DataFrame 
+to data/processed/shap_explanations.csv with columns: GEOID, predicted_risk_score, 
+top_feature_1, top_feature_1_value, top_feature_2, top_feature_2_value, top_feature_3, 
+top_feature_3_value. Print the first 5 rows.
+
+**Codex Output Summary:**  
+Codex generated explain_model.py using shap.Explainer with the trained XGBoost model, 
+computing per-row SHAP values and extracting top 3 features by absolute SHAP magnitude 
+for every tract. Output saved as a flat CSV with one row per tract.
+
+**Key Design Decisions:**  
+- Top 3 features ranked by absolute SHAP value so direction doesn't affect ranking
+- SHAP value sign preserved in output so negative values show risk-reducing factors
+- predicted_risk_score derived from predict_proba not predict for continuous scoring
+- Flat CSV format chosen for easy API consumption later
+
+**Results:**  
+- 12,694 tract explanations generated successfully
+- Each tract has a risk score 0-1 and top 3 named driving factors with direction
+- Example: tract 01001020100 risk score 14.6%, driven down by high median gross rent, 
+  low renter occupied units, and low depression rates
+- Output saved to data/processed/shap_explanations.csv
+
+**Next:** Prompt 012 — FastAPI Back End
