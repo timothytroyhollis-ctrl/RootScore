@@ -217,7 +217,8 @@ Eviction Lab, and CDC PLACES only. Save to data/processed/master_dataset.csv and
 row count, columns, and null counts.
 
 **Codex Output Summary:**  
-*(To be filled in after Codex generates the updated script)*
+Codex edited build_master_dataset.py removing HUD_PATH, hud_df, the HUD merge step, 
+and added drop_duplicates on GEOID. Script recompiled cleanly on first pass.
 
 **Key Design Decisions:**  
 - HUD dropped due to metro-area join key mismatch with tract-level GEOID
@@ -225,6 +226,11 @@ row count, columns, and null counts.
 - Deduplication on GEOID keeps first occurrence to resolve 11 duplicate tract rows
 - Final three sources: ACS (85,396 tracts), Eviction Lab (15,217 tracts), CDC PLACES 
   (78,815 tracts)
+
+ **Real-World Discoveries:**  
+- After removing HUD and FRED, row count corrected to exactly 85,396 — 
+  confirming the 11 duplicates came from the HUD fan-out join
+- Three source merge runs cleanly with no duplicate GEOIDs 
 
 ## Prompt 009 — Feature Engineering and Target Variable Creation
 **Date:** 2026-03-27  
@@ -327,4 +333,38 @@ for every tract. Output saved as a flat CSV with one row per tract.
   low renter occupied units, and low depression rates
 - Output saved to data/processed/shap_explanations.csv
 
-**Next:** Prompt 012 — FastAPI Back End
+## Prompt 012 — FastAPI Back End
+**Date:** 2026-03-27  
+**Purpose:** Build a REST API that serves RootScore predictions and SHAP explanations.
+
+**Prompt:**  
+Write a Python FastAPI application called api/main.py that serves RootScore predictions. 
+The app should have three endpoints: GET /health that returns status ok, GET /tract/{geoid} 
+that accepts an 11-digit census tract GEOID and returns the predicted risk score, risk tier 
+(low/medium/high/critical), and top 3 driving factors with plain-language labels, and GET 
+/city/{city_name} that returns all tracts for a given state abbreviation and city ranked by 
+risk score descending. On startup load data/processed/shap_explanations.csv and 
+data/processed/modeling_dataset.csv into memory as pandas DataFrames. Map feature names 
+to plain-language labels for the response. Return all responses as JSON. Include CORS 
+middleware so a React front end can call it.
+
+**Codex Output Summary:**  
+Codex generated api/main.py with startup data loading, CORS middleware, three endpoints, 
+risk tier thresholding, plain-language feature label mapping, and graceful error handling 
+with proper HTTP status codes throughout.
+
+**Key Design Decisions:**  
+- Data loaded into memory on startup so no disk reads on every request
+- CORS allow_origins wildcard enables React front end to call from any domain
+- Risk tiers calibrated at 0.35/0.65/0.85 thresholds (low/medium/high/critical)
+- Plain language labels map technical feature names to counselor-readable descriptions
+- City endpoint made defensive since modeling dataset lacks city name column
+
+**Results:**  
+- API running at http://localhost:8000
+- GET /health returns {"status": "ok"}
+- GET /tract/01001020100 returns risk score 0.1446, tier "low", top 3 SHAP factors
+- Interactive docs available at http://localhost:8000/docs
+- Full production-quality JSON response on first run
+
+**Next:** Prompt 013 — React Front End with Choropleth Map
