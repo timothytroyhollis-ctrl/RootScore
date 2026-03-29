@@ -18,13 +18,8 @@ function parseSearchInput(value) {
     return { type: "tract", geoid: digitsOnly };
   }
 
-  const cityStateMatch = trimmed.match(/^(.+?),\s*([A-Za-z]{2})$/);
-  if (cityStateMatch) {
-    return {
-      type: "city",
-      cityName: cityStateMatch[1].trim(),
-      stateAbbr: cityStateMatch[2].toUpperCase(),
-    };
+  if (digitsOnly.length === 5) {
+    return { type: "zip", zipcode: digitsOnly };
   }
 
   return null;
@@ -115,7 +110,7 @@ export default function App() {
 
     const parsed = parseSearchInput(query);
     if (!parsed) {
-      setError("Enter either an 11-digit tract GEOID or a city search like Austin, TX.");
+      setError("Enter either an 11-digit tract GEOID or a 5-digit ZIP code.");
       return;
     }
 
@@ -133,20 +128,15 @@ export default function App() {
         setResults([payload]);
         setSearchContext(`Showing RootScore for tract ${payload.GEOID}`);
       } else {
-        const params = new URLSearchParams({ state_abbr: parsed.stateAbbr });
-        const response = await fetch(
-          `${API_BASE_URL}/city/${encodeURIComponent(parsed.cityName)}?${params.toString()}`
-        );
+        const response = await fetch(`${API_BASE_URL}/zip/${parsed.zipcode}`);
         const payload = await response.json();
 
         if (!response.ok) {
-          throw new Error(payload.detail || "Unable to load city data.");
+          throw new Error(payload.detail || "Unable to load ZIP code data.");
         }
 
         setResults(payload.tracts || []);
-        setSearchContext(
-          `Showing ${payload.tract_count} tracts for ${payload.city_name}, ${payload.state_abbr}`
-        );
+        setSearchContext(`Showing ${payload.tract_count} tracts for ZIP ${payload.zip}`);
       }
     } catch (searchError) {
       setError(searchError.message || "Something went wrong while searching.");
@@ -166,7 +156,7 @@ export default function App() {
             Know before displacement happens.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-            Search by census tract GEOID or by city and state to surface eviction risk,
+            Search by census tract GEOID or ZIP code to surface eviction risk,
             neighborhood vulnerability, and the strongest drivers behind each score.
           </p>
 
@@ -175,7 +165,7 @@ export default function App() {
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Enter tract GEOID or city, ST"
+              placeholder="Enter tract GEOID or ZIP code"
               className="h-14 flex-1 rounded-2xl border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none ring-0 placeholder:text-slate-400 focus:border-teal-500"
             />
             <button
@@ -189,7 +179,7 @@ export default function App() {
 
           <p className="mt-3 text-sm text-slate-500">
             Examples: <span className="font-medium text-slate-700">17031010100</span> or{" "}
-            <span className="font-medium text-slate-700">Austin, TX</span>
+            <span className="font-medium text-slate-700">78201</span>
           </p>
         </header>
 
@@ -217,7 +207,7 @@ export default function App() {
             </div>
           ) : !loading ? (
             <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
-              <h2 className="text-xl font-semibold text-slate-900">Search a tract or city to begin</h2>
+              <h2 className="text-xl font-semibold text-slate-900">Search a tract or ZIP code to begin</h2>
               <p className="mt-3 text-slate-600">
                 RootScore returns tract-level eviction risk predictions with a transparent
                 breakdown of the factors pushing risk up or down.
