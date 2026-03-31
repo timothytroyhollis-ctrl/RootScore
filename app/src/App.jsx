@@ -156,7 +156,7 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
       <div className="mb-4 px-2 pt-2">
         <h2 className="text-lg font-semibold text-slate-900">ZIP-level tract map</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Census tract boundaries are shaded by RootScore risk tier. Click a tract to see details.
+          Census tract boundaries are shaded by QRoots housing stability tier. Click a tract to see details.
         </p>
       </div>
       <div className="h-[34rem] overflow-hidden rounded-3xl">
@@ -195,7 +195,7 @@ function ResultCard({ tract, zip }) {
           </span>
           <div className="text-left sm:text-right">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Risk Score
+              Housing Stability Risk
             </p>
             <p className="mt-1 text-3xl font-bold text-slate-900">
               {formatPercent(tract.predicted_risk_score)}
@@ -318,7 +318,7 @@ export default function App() {
         }
 
         setResults([payload]);
-        setSearchContext(`Showing RootScore for tract ${payload.GEOID}`);
+        setSearchContext(`Showing QRoots score for tract ${payload.GEOID}`);
         setSearchMode("tract");
         setSearchedZip("");
       } else {
@@ -347,13 +347,13 @@ export default function App() {
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-10">
         <header className="rounded-[2rem] border border-white/70 bg-white/80 px-8 py-10 shadow-xl shadow-slate-200/50 backdrop-blur">
           <p className="text-sm font-semibold uppercase tracking-[0.32em] text-teal-700">
-            RootScore
+            QRoots
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Know before displacement happens.
+            Know where you're planting roots.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-            Search by census tract GEOID or ZIP code to surface eviction risk,
+            Search by census tract GEOID or ZIP code to surface housing stability risk,
             neighborhood vulnerability, and the strongest drivers behind each score.
           </p>
 
@@ -370,7 +370,7 @@ export default function App() {
               disabled={loading}
               className="inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              {loading ? "Searching..." : "Search RootScore"}
+              {loading ? "Searching..." : "Search QRoots"}
             </button>
           </form>
 
@@ -415,7 +415,7 @@ export default function App() {
             <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
               <h2 className="text-xl font-semibold text-slate-900">Search a tract or ZIP code to begin</h2>
               <p className="mt-3 text-slate-600">
-                RootScore returns tract-level eviction risk predictions with a transparent
+                QRoots returns neighborhood quality scores with a transparent
                 breakdown of the factors pushing risk up or down.
               </p>
             </section>
@@ -424,7 +424,7 @@ export default function App() {
 
         <footer className="mt-10 rounded-[2rem] border border-white/70 bg-white/70 px-8 py-6 shadow-sm shadow-slate-200/40">
           <p className="text-sm leading-7 text-slate-500">
-            RootScore is designed for intervention, not surveillance. Scores are advisory and
+            QRoots is designed for intervention, not surveillance. Scores are advisory and
             reflect neighborhood-level patterns, not individual circumstances. Data sources:
             Census ACS, Eviction Lab, CDC PLACES.
           </p>
@@ -432,7 +432,7 @@ export default function App() {
             Eviction data reflects 2016 validated records. Model trained on XGBoost with AUC-ROC 0.81.
           </p>
           <a
-            href="https://github.com/timothytroyhollis-ctrl/RootScore"
+            href="https://github.com/timothytroyhollis-ctrl/QRoots"
             target="_blank"
             rel="noreferrer"
             className="mt-4 inline-flex text-sm font-medium text-teal-700 transition hover:text-teal-800"
