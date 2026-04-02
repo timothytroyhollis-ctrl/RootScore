@@ -541,12 +541,17 @@ export default function App() {
 
         <footer className="mt-10 rounded-[2rem] border border-white/70 bg-white/70 px-8 py-6 shadow-sm shadow-slate-200/40">
           <p className="text-sm leading-7 text-slate-500">
-            QRoots is designed for intervention, not surveillance. Scores are advisory and
-            reflect neighborhood-level patterns, not individual circumstances. Data sources:
-            Census ACS, Eviction Lab, CDC PLACES, Walk Score, HUD FMR.
+            QRoots is designed to help people make informed decisions about where to live and
+            to support housing intervention efforts. Scores are advisory and reflect
+            neighborhood-level patterns, not individual circumstances. Data sources: Census
+            ACS 5-Year Estimates, Princeton Eviction Lab, CDC PLACES 2025, Walk Score, HUD
+            Fair Market Rent.
           </p>
           <p className="mt-3 text-sm leading-7 text-slate-500">
-            Eviction data reflects 2016 validated records. Model trained on XGBoost with AUC-ROC 0.81.
+            Eviction data reflects 2016 validated records. Walk Score data reflects city-level
+            averages. QRoots composite score weighted: Housing Stability 40%, Walkability 20%,
+            Transit 15%, Education 15%, Affordability 10%. Model trained on XGBoost with
+            AUC-ROC 0.81.
           </p>
           <a
             href="https://github.com/timothytroyhollis-ctrl/QRoots"
