@@ -757,7 +757,15 @@ with shap_explanations_all.csv via GEOID join, and adding all six QRoots score f
 to both /tract/{geoid} and /zip/{zipcode} responses. zip_qroots_score added as average 
 across tracts at the zip response top level.
 
+**Key Design Decisions:**  
+- qroots_scores.csv loaded on startup and merged via GEOID left join
+- All six score fields added to both /tract and /zip responses
+- zip_qroots_score computed as mean of tract qroots_scores for the ZIP
+- Null score fields returned as None rather than 0 to distinguish missing from low
+
 **Next:** Prompt 023 — Update React Front End for QRoots Dashboard
+
+---
 
 ## Prompt 023 — QRoots Dashboard UI with Dimension Scores
 **Date:** 2026-04-02  
@@ -823,3 +831,107 @@ weighting methodology to the data vintage note.
 - Data sources, weights, and model metrics all transparent
 
 **Next:** Prompt 025 — README Documentation
+
+## Prompt 025 — README Documentation
+**Date:** 2026-04-02
+**Purpose:** Write a comprehensive README for the QRoots GitHub repository.
+
+**Prompt:**
+Write a comprehensive README.md for the QRoots project in the root of the repository.
+Include: project title and tagline, description, Features section, Data Sources section,
+Tech Stack section, How It Works numbered steps, QRoots Score Methodology with weights,
+Live Demo URL, Codex Build Process section, and Ethics section.
+
+**Codex Output Summary:**
+Codex generated a complete README.md with all requested sections, clean markdown
+formatting, and links to the live demo and Codex prompt log.
+
+**Key Design Decisions:**
+- Ethics section explicitly prohibits use for tenant screening or surveillance
+- Methodology weights documented publicly for transparency
+- Codex build process section links to docs/codex-prompts.md for judges
+- Live demo URL points to https://rootscore.onrender.com
+
+**Next:** Prompt 026 — OpenAI Neighborhood Summary Endpoint
+
+---
+
+## Prompt 026 — OpenAI Neighborhood Summary Endpoint
+**Date:** 2026-04-05
+**Purpose:** Add an AI-powered plain-language neighborhood summary endpoint to the API.
+
+**Prompt:**
+Update api/main.py to add a new endpoint GET /summary/{zipcode} that generates an
+AI-powered neighborhood summary using the OpenAI API. Load the OpenAI API key from
+openai_config.json or the OPENAI_API_KEY environment variable. When called, look up
+the average QRoots scores for that ZIP, find the most common top driving factors, and
+send this data to gpt-4o-mini with a prompt asking for a 3-4 sentence plain-language
+neighborhood summary for someone considering moving there. Return the summary as JSON
+with a single field called summary.
+
+**Codex Output Summary:**
+Codex generated the /summary/{zipcode} endpoint with ZIP lookup, metric aggregation,
+top factor counting via Counter, and OpenAI chat completions call using gpt-4o-mini.
+load_openai_client function reads from OPENAI_API_KEY environment variable with
+fallback to openai_config.json for local development.
+
+**Key Design Decisions:**
+- gpt-4o-mini chosen for speed and low cost per summary
+- OPENAI_API_KEY environment variable used on Render, config file for local dev
+- Prompt instructs model to use cautious practical language and mention tradeoffs
+- max_tokens set to 180 to keep summaries concise
+- Exception handling returns HTTP 500 with error detail if OpenAI call fails
+
+**Real-World Discoveries:**
+- Codex used client.responses.create which is the newer Responses API — fixed to
+  client.chat.completions.create for compatibility with openai==1.82.0
+- OpenAI account required billing setup — 429 quota error resolved by adding credits
+- OPENAI_API_KEY environment variable must be set in Render dashboard separately
+  from code deployment
+
+**Results:**
+- GET /summary/78229 returns 3-4 sentence AI neighborhood summary
+- Summary mentions affordability strength, housing stability concerns, limited transit
+- Response time approximately 2-5 seconds due to OpenAI API call
+
+**Next:** Prompt 027 — Logo, Tooltips, AI Summary UI, Empty State
+
+---
+
+## Prompt 027 — Logo, Tooltips, AI Summary UI, Engaging Empty State
+**Date:** 2026-04-05
+**Purpose:** Five simultaneous UI enhancements to make QRoots more engaging and informative.
+
+**Prompt:**
+Update app/src/App.jsx with five enhancements: 1) Add QRoots logo to header from
+public/QRoots_logo.png. 2) Update tagline to 'Find Your Perfect Place to Grow.'
+3) Add hover tooltips to each dimension bar explaining what data is included.
+4) Add AI Neighborhood Summary card after QRoots summary card for ZIP searches,
+calling GET /summary/{zipcode} with loading state. 5) Make empty state more engaging
+with logo, tagline, and description of what QRoots does.
+
+**Codex Output Summary:**
+Codex added dimensionTooltips constant, updated DimensionBar with group-hover tooltip
+using Tailwind CSS, added NeighborhoodSummaryCard component with loading state,
+added useEffect to fetch summary on ZIP search, added logo to header and empty state,
+and updated tagline throughout.
+
+**Key Design Decisions:**
+- Tooltips use Tailwind group-hover pattern — no external library needed
+- Summary fetched in separate useEffect triggered by searchedZip state change
+- Logo sized at h-40 sm:h-48 in header, h-52 sm:h-64 in empty state
+- Summary card shows graceful fallback message if OpenAI call fails
+- Empty state now shows logo prominently to reinforce brand on first load
+
+**Real-World Discoveries:**
+- Logo PNG is 1024x1024 with significant whitespace padding making it appear small
+  at standard heights — increased size classes to compensate
+- Codex reverted API_BASE_URL to localhost — corrected to production Render URL
+
+**Results:**
+- Logo visible in header and empty state
+- Hover tooltips working on all five dimension bars
+- AI neighborhood summary appearing after QRoots score card on ZIP searches
+- Empty state shows logo with tagline and description
+
+**Next:** Contest submission on Handshake before April 30, 2026
