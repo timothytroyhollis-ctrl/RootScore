@@ -1,5 +1,5 @@
 # RootScore — Codex Prompt Log
-**Project:** RootScore — Neighborhood Eviction Risk Tool  
+**Project:** QRoots — Neighborhood Quality of Life Tool 
 **Contest:** OpenAI Codex Contest 2026  
 **Author:** Tim Hollis
 **Submission Deadline:** April 30, 2026
@@ -626,7 +626,7 @@ design language.
 - data/processed/ and models/ excluded from .gitignore but uploaded manually to 
   GitHub for deployment
 
-**Next:** NeighborhoodScore — Evolve RootScore into a full relocation quality of life tool
+**Next:** Prompt 019 — QRoots Rebrand
 
 ## Prompt 019 — QRoots Rebrand
 **Date:** 2026-03-31  
@@ -752,6 +752,74 @@ qroots_score across all returned tracts as a zip_qroots_score field at the top l
 the response.
 
 **Codex Output Summary:**  
-*(To be filled in after Codex generates the script)*
+Codex generated updated api/main.py loading qroots_scores.csv on startup, merging it 
+with shap_explanations_all.csv via GEOID join, and adding all six QRoots score fields 
+to both /tract/{geoid} and /zip/{zipcode} responses. zip_qroots_score added as average 
+across tracts at the zip response top level.
 
 **Next:** Prompt 023 — Update React Front End for QRoots Dashboard
+
+## Prompt 023 — QRoots Dashboard UI with Dimension Scores
+**Date:** 2026-04-02  
+**Purpose:** Update React front end to display QRoots composite score dashboard 
+with five dimension progress bars.
+
+**Prompt:**  
+Update app/src/App.jsx to display the new QRoots composite score dimensions. When 
+results are returned show a QRoots Score summary card at the top displaying the overall 
+qroots_score as a large number out of 100 with a color gradient (red below 40, yellow 
+40-60, green above 60). Below that show five dimension bars: Housing Stability, 
+Walkability, Transit, Education, and Affordability each showing their score out of 100 
+as a horizontal progress bar colored by score level. Keep the existing map and tract 
+cards below. Update the zip response to show the zip_qroots_score prominently at the top.
+
+**Codex Output Summary:**  
+Codex generated QRootsSummaryCard and DimensionBar components with color-coded progress 
+bars, scoreTone helper for red/amber/green coloring, and zip-level average QRoots score 
+display. Added zipQRootsScore state to track zip vs tract search context.
+
+**Key Design Decisions:**  
+- scoreTone function maps scores to red/amber/green color ramps at 40 and 60 thresholds
+- QRootsSummaryCard shows overall score prominently with dimension bars beside it
+- DimensionBar clips values 0-100 and applies appropriate color per score level
+- ZIP search uses zip_qroots_score (average across tracts) for the summary card
+- Tract search uses the individual tract qroots_score for the summary card
+
+**Results:**  
+- QRoots Score dashboard live showing 29/100 for ZIP 78229
+- Five dimension bars visible: Housing Stability 8, Walkability 24, Transit 12, 
+  Education 35, Affordability 67
+- Color coding working correctly — red for low scores, amber for medium, green for high
+
+**Next:** Prompt 024 — Updated Footer with QRoots Methodology
+
+---
+
+## Prompt 024 — Updated Footer with QRoots Methodology
+**Date:** 2026-04-02 
+**Purpose:** Update footer to reflect QRoots as a relocation and intervention tool 
+with full methodology transparency.
+
+**Prompt:**  
+Update the footer in app/src/App.jsx to better reflect QRoots as a neighborhood quality 
+of life tool for both relocation research and housing intervention. Update the ethics 
+statement to reference all five data sources. Update the data vintage note to include 
+the composite score weights and model metrics. Keep the GitHub link unchanged.
+
+**Codex Output Summary:**  
+Codex updated the footer ethics statement to reference relocation and intervention use 
+cases, listed all five data sources explicitly, and added the QRoots composite score 
+weighting methodology to the data vintage note.
+
+**Key Design Decisions:**  
+- Ethics statement expanded to cover both relocation research and housing intervention
+- All five data sources listed explicitly for transparency
+- Composite score weights documented in footer for judge and user reference
+- Walk Score data vintage note added since it reflects city-level averages not tract
+
+**Results:**  
+- Footer live on https://rootscore.onrender.com
+- Full methodology visible to judges and users
+- Data sources, weights, and model metrics all transparent
+
+**Next:** Prompt 025 — README Documentation

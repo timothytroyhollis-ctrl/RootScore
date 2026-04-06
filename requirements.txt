@@ -10,3 +10,4 @@ numpy==2.4.4
 scipy==1.17.1
 uvicorn[standard]==0.42.0
 python-multipart==0.0.20
+openai==1.82.0

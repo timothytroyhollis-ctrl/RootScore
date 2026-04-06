@@ -28,6 +28,19 @@ const dimensionLabels = {
   affordability_score: "Affordability",
 };
 
+const dimensionTooltips = {
+  housing_stability_score:
+    "Based on eviction filing rates, rent burden, renter occupancy, and unemployment data from Census ACS and Princeton Eviction Lab.",
+  walk_score:
+    "Based on Walk Score city-level averages reflecting pedestrian friendliness of the neighborhood.",
+  transit_score:
+    "Based on transit score reflecting access to public transportation options.",
+  education_score:
+    "Based on educational attainment percentage from Census ACS 5-Year Estimates.",
+  affordability_score:
+    "Based on HUD Fair Market Rent for a 2-bedroom unit, inverted so lower rent areas score higher.",
+};
+
 function parseSearchInput(value) {
   const trimmed = value.trim();
   const digitsOnly = trimmed.replace(/\D/g, "");
@@ -216,11 +229,20 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
 function DimensionBar({ label, value }) {
   const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
   const tone = scoreTone(safeValue);
+  const tooltipKey =
+    Object.entries(dimensionLabels).find(([, dimensionLabel]) => dimensionLabel === label)?.[0];
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
+        <div className="group relative inline-flex items-center">
+          <p className="cursor-help text-sm font-medium text-slate-700 underline decoration-dotted underline-offset-4">
+            {label}
+          </p>
+          <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-72 rounded-2xl bg-slate-950 px-4 py-3 text-xs leading-5 text-white shadow-xl group-hover:block">
+            {dimensionTooltips[tooltipKey] ?? ""}
+          </div>
+        </div>
         <p className={`text-sm font-semibold ${tone.text}`}>{formatScore(safeValue)}/100</p>
       </div>
       <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
@@ -230,6 +252,23 @@ function DimensionBar({ label, value }) {
         />
       </div>
     </div>
+  );
+}
+
+function NeighborhoodSummaryCard({ summary, loading }) {
+  return (
+    <section className="mb-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
+      <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
+        AI Neighborhood Summary
+      </p>
+      {loading ? (
+        <p className="mt-4 text-sm leading-7 text-slate-600">
+          Generating a plain-language summary for this ZIP code...
+        </p>
+      ) : (
+        <p className="mt-4 text-base leading-8 text-slate-700">{summary}</p>
+      )}
+    </section>
   );
 }
 
@@ -349,6 +388,8 @@ export default function App() {
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState("");
   const [zipQRootsScore, setZipQRootsScore] = useState(null);
+  const [zipSummary, setZipSummary] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   const zipResultStateFips = useMemo(() => {
     if (searchMode !== "zip" || results.length === 0) {
@@ -398,6 +439,36 @@ export default function App() {
     loadMapData();
   }, [results, searchMode, zipResultStateFips]);
 
+  useEffect(() => {
+    async function loadZipSummary() {
+      if (searchMode !== "zip" || !searchedZip || results.length === 0) {
+        setZipSummary("");
+        setSummaryLoading(false);
+        return;
+      }
+
+      setSummaryLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/summary/${searchedZip}`);
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.detail || "Unable to generate neighborhood summary.");
+        }
+
+        setZipSummary(payload.summary || "");
+      } catch (_summaryError) {
+        setZipSummary(
+          "We couldn't generate an AI neighborhood summary right now, but you can still explore the tract scores and map below."
+        );
+      } finally {
+        setSummaryLoading(false);
+      }
+    }
+
+    loadZipSummary();
+  }, [results, searchMode, searchedZip]);
+
   async function handleSearch(event) {
     event.preventDefault();
     setError("");
@@ -406,6 +477,8 @@ export default function App() {
     setMapError("");
     setZipQRootsScore(null);
     setSearchedZip("");
+    setZipSummary("");
+    setSummaryLoading(false);
 
     const parsed = parseSearchInput(query);
     if (!parsed) {
@@ -456,11 +529,16 @@ export default function App() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,118,110,0.14),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] text-slate-900">
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-10">
         <header className="rounded-[2rem] border border-white/70 bg-white/80 px-8 py-10 shadow-xl shadow-slate-200/50 backdrop-blur">
-          <p className="text-sm font-semibold uppercase tracking-[0.32em] text-teal-700">
+          <img
+            src="/QRoots_logo.png"
+            alt="QRoots logo"
+            className="mx-auto h-28 w-auto sm:h-32"
+          />
+          <p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.32em] text-teal-700">
             QRoots
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Know where you're planting roots.
+            Find Your Perfect Place to Grow.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
             Search by census tract GEOID or ZIP code to surface neighborhood quality,
@@ -514,6 +592,10 @@ export default function App() {
           ) : null}
 
           {searchMode === "zip" && results.length > 0 ? (
+            <NeighborhoodSummaryCard summary={zipSummary} loading={summaryLoading} />
+          ) : null}
+
+          {searchMode === "zip" && results.length > 0 ? (
             <ZipResultsMap
               tracts={results}
               tractGeoJson={tractGeoJson}
@@ -530,10 +612,18 @@ export default function App() {
             </div>
           ) : !loading ? (
             <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
-              <h2 className="text-xl font-semibold text-slate-900">Search a tract or ZIP code to begin</h2>
-              <p className="mt-3 text-slate-600">
-                QRoots returns neighborhood quality scores with a transparent
-                breakdown of the factors pushing scores up or down.
+              <img
+                src="/QRoots_logo.png"
+                alt="QRoots logo"
+                className="mx-auto h-36 w-auto sm:h-44"
+              />
+              <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-900">
+                Find Your Perfect Place to Grow.
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                QRoots helps you explore neighborhood quality, housing stability, and
+                community context through tract-level scores, interactive maps, and
+                explainable drivers behind each result.
               </p>
             </section>
           ) : null}

@@ -9,3 +9,4 @@ __pycache__/
 .env
 node_modules/node_modules/
 build/
+openai_config.json
