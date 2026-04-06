@@ -532,7 +532,7 @@ export default function App() {
           <img
             src="/QRoots_logo.png"
             alt="QRoots logo"
-            className="mx-auto h-28 w-auto sm:h-32"
+            className="mx-auto h-40 w-auto sm:h-48"
           />
           <p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.32em] text-teal-700">
             QRoots
@@ -615,7 +615,7 @@ export default function App() {
               <img
                 src="/QRoots_logo.png"
                 alt="QRoots logo"
-                className="mx-auto h-36 w-auto sm:h-44"
+                className="mx-auto h-52 w-auto sm:h-64"
               />
               <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-900">
                 Find Your Perfect Place to Grow.
