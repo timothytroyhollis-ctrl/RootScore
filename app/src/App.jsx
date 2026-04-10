@@ -41,18 +41,26 @@ const dimensionTooltips = {
     "Based on HUD Fair Market Rent for a 2-bedroom unit, inverted so lower rent areas score higher.",
 };
 
+const stateOptions = [
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN",
+  "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH",
+  "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT",
+  "VT", "VA", "WA", "WV", "WI", "WY",
+];
+
+const weightConfig = [
+  { key: "housing", label: "Housing Stability" },
+  { key: "walk", label: "Walkability" },
+  { key: "transit", label: "Transit" },
+  { key: "education", label: "Education" },
+  { key: "affordability", label: "Affordability" },
+];
+
 function parseSearchInput(value) {
   const trimmed = value.trim();
   const digitsOnly = trimmed.replace(/\D/g, "");
-
-  if (digitsOnly.length === 11) {
-    return { type: "tract", geoid: digitsOnly };
-  }
-
-  if (digitsOnly.length === 5) {
-    return { type: "zip", zipcode: digitsOnly };
-  }
-
+  if (digitsOnly.length === 11) return { type: "tract", geoid: digitsOnly };
+  if (digitsOnly.length === 5) return { type: "zip", zipcode: digitsOnly };
   return null;
 }
 
@@ -67,40 +75,59 @@ function formatScore(value) {
 function scoreTone(value) {
   const numericValue = Number(value) || 0;
   if (numericValue < 40) {
-    return {
-      text: "text-red-700",
-      fill: "bg-red-500",
-      panel: "from-red-50 to-white",
-      ring: "ring-red-200",
-    };
+    return { text: "text-red-700", fill: "bg-red-500", panel: "from-red-50 to-white", ring: "ring-red-200" };
   }
-
   if (numericValue <= 60) {
-    return {
-      text: "text-amber-700",
-      fill: "bg-amber-400",
-      panel: "from-amber-50 to-white",
-      ring: "ring-amber-200",
-    };
+    return { text: "text-amber-700", fill: "bg-amber-400", panel: "from-amber-50 to-white", ring: "ring-amber-200" };
   }
-
-  return {
-    text: "text-emerald-700",
-    fill: "bg-emerald-500",
-    panel: "from-emerald-50 to-white",
-    ring: "ring-emerald-200",
-  };
+  return { text: "text-emerald-700", fill: "bg-emerald-500", panel: "from-emerald-50 to-white", ring: "ring-emerald-200" };
 }
 
 function formatShapValue(value) {
   const numericValue = Number(value);
   const arrow = numericValue >= 0 ? "\u2191" : "\u2193";
   const tone = numericValue >= 0 ? "text-red-600" : "text-emerald-600";
-  return {
-    arrow,
-    tone,
-    text: `${arrow} ${Math.abs(numericValue).toFixed(3)}`,
-  };
+  return { arrow, tone, text: `${arrow} ${Math.abs(numericValue).toFixed(3)}` };
+}
+
+function rebalanceWeights(currentWeights, changedKey, nextValue) {
+  const clampedValue = Math.max(0, Math.min(100, Number(nextValue) || 0));
+  const otherKeys = weightConfig.map((item) => item.key).filter((key) => key !== changedKey);
+  const remaining = 100 - clampedValue;
+  const currentOtherTotal = otherKeys.reduce((sum, key) => sum + currentWeights[key], 0);
+  const updatedWeights = { ...currentWeights, [changedKey]: clampedValue };
+
+  if (otherKeys.length === 0) return updatedWeights;
+
+  if (currentOtherTotal <= 0) {
+    const baseShare = Math.floor(remaining / otherKeys.length);
+    let remainder = remaining - baseShare * otherKeys.length;
+    otherKeys.forEach((key) => {
+      updatedWeights[key] = baseShare + (remainder > 0 ? 1 : 0);
+      if (remainder > 0) remainder -= 1;
+    });
+    return updatedWeights;
+  }
+
+  const rawAllocations = otherKeys.map((key) => ({
+    key,
+    value: (currentWeights[key] / currentOtherTotal) * remaining,
+  }));
+
+  let assigned = 0;
+  rawAllocations.forEach((item) => {
+    updatedWeights[item.key] = Math.floor(item.value);
+    assigned += updatedWeights[item.key];
+  });
+
+  let remainder = remaining - assigned;
+  rawAllocations
+    .sort((a, b) => (b.value - Math.floor(b.value)) - (a.value - Math.floor(a.value)))
+    .forEach((item) => {
+      if (remainder > 0) { updatedWeights[item.key] += 1; remainder -= 1; }
+    });
+
+  return updatedWeights;
 }
 
 async function fetchStateTractsGeoJson(stateFips, geoids) {
@@ -112,41 +139,25 @@ async function fetchStateTractsGeoJson(stateFips, geoids) {
 
 function MapBounds({ geoJson }) {
   const map = useMap();
-
   useEffect(() => {
     const features = geoJson?.features ?? [];
-    if (!features.length) {
-      return;
-    }
-
+    if (!features.length) return;
     const bounds = [];
     features.forEach((feature) => {
       const coordinates = feature?.geometry?.coordinates ?? [];
       const geometryType = feature?.geometry?.type;
-
       const walkCoordinates = (nodes) => {
-        if (!Array.isArray(nodes)) {
-          return;
-        }
-
+        if (!Array.isArray(nodes)) return;
         if (typeof nodes[0] === "number" && typeof nodes[1] === "number") {
           bounds.push([nodes[1], nodes[0]]);
           return;
         }
-
         nodes.forEach(walkCoordinates);
       };
-
-      if (geometryType === "Polygon" || geometryType === "MultiPolygon") {
-        walkCoordinates(coordinates);
-      }
+      if (geometryType === "Polygon" || geometryType === "MultiPolygon") walkCoordinates(coordinates);
     });
-
-    if (bounds.length) {
-      map.fitBounds(bounds, { padding: [24, 24] });
-    }
+    if (bounds.length) map.fitBounds(bounds, { padding: [24, 24] });
   }, [geoJson, map]);
-
   return null;
 }
 
@@ -158,7 +169,6 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
       </section>
     );
   }
-
   if (mapError) {
     return (
       <section className="mt-6 rounded-[2rem] border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
@@ -166,10 +176,7 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
       </section>
     );
   }
-
-  if (!tractGeoJson?.features?.length) {
-    return null;
-  }
+  if (!tractGeoJson?.features?.length) return null;
 
   const tractByGeoid = new Map(tracts.map((tract) => [tract.GEOID, tract]));
 
@@ -177,22 +184,13 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
     const geoid = feature?.properties?.GEOID;
     const tract = tractByGeoid.get(geoid);
     const tier = tract?.risk_tier ?? "low";
-
-    return {
-      color: "#0f172a",
-      weight: 1,
-      fillColor: mapFillColors[tier] ?? mapFillColors.low,
-      fillOpacity: 0.58,
-    };
+    return { color: "#0f172a", weight: 1, fillColor: mapFillColors[tier] ?? mapFillColors.low, fillOpacity: 0.58 };
   };
 
   const onEachFeature = (feature, layer) => {
     const geoid = feature?.properties?.GEOID;
     const tract = tractByGeoid.get(geoid);
-    if (!tract) {
-      return;
-    }
-
+    if (!tract) return;
     const topFactor = tract.top_driving_factors?.[0];
     layer.bindPopup(`
       <div style="min-width: 220px;">
@@ -229,9 +227,7 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
 function DimensionBar({ label, value }) {
   const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
   const tone = scoreTone(safeValue);
-  const tooltipKey =
-    Object.entries(dimensionLabels).find(([, dimensionLabel]) => dimensionLabel === label)?.[0];
-
+  const tooltipKey = Object.entries(dimensionLabels).find(([, dimensionLabel]) => dimensionLabel === label)?.[0];
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
@@ -246,10 +242,23 @@ function DimensionBar({ label, value }) {
         <p className={`text-sm font-semibold ${tone.text}`}>{formatScore(safeValue)}/100</p>
       </div>
       <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full ${tone.fill}`}
-          style={{ width: `${safeValue}%` }}
-        />
+        <div className={`h-full rounded-full ${tone.fill}`} style={{ width: `${safeValue}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function MiniDimensionBar({ label, value }) {
+  const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
+  const tone = scoreTone(safeValue);
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <p className="text-xs font-medium text-slate-600">{label}</p>
+        <p className={`text-xs font-semibold ${tone.text}`}>{formatScore(safeValue)}</p>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full ${tone.fill}`} style={{ width: `${safeValue}%` }} />
       </div>
     </div>
   );
@@ -274,42 +283,23 @@ function NeighborhoodSummaryCard({ summary, loading }) {
 
 function QRootsSummaryCard({ overallScore, tract }) {
   const tone = scoreTone(overallScore);
-  const dimensionKeys = [
-    "housing_stability_score",
-    "walk_score",
-    "transit_score",
-    "education_score",
-    "affordability_score",
-  ];
-
+  const dimensionKeys = ["housing_stability_score", "walk_score", "transit_score", "education_score", "affordability_score"];
   return (
-    <section
-      className={`mb-6 rounded-[2rem] border bg-gradient-to-br ${tone.panel} p-6 shadow-sm shadow-slate-200/50 ring-1 ${tone.ring}`}
-    >
+    <section className={`mb-6 rounded-[2rem] border bg-gradient-to-br ${tone.panel} p-6 shadow-sm shadow-slate-200/50 ring-1 ${tone.ring}`}>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
-            QRoots Score
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">QRoots Score</p>
           <div className="mt-3 flex items-end gap-3">
-            <span className={`text-5xl font-bold tracking-tight ${tone.text}`}>
-              {formatScore(overallScore)}
-            </span>
+            <span className={`text-5xl font-bold tracking-tight ${tone.text}`}>{formatScore(overallScore)}</span>
             <span className="pb-1 text-base font-medium text-slate-500">/ 100</span>
           </div>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            A composite neighborhood score balancing housing stability, walkability,
-            transit access, educational attainment, and affordability.
+            A composite neighborhood score balancing housing stability, walkability, transit access, educational attainment, and affordability.
           </p>
         </div>
-
         <div className="grid flex-1 gap-4">
           {dimensionKeys.map((key) => (
-            <DimensionBar
-              key={key}
-              label={dimensionLabels[key]}
-              value={tract?.[key]}
-            />
+            <DimensionBar key={key} label={dimensionLabels[key]} value={tract?.[key]} />
           ))}
         </div>
       </div>
@@ -322,48 +312,31 @@ function ResultCard({ tract, zip }) {
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Census Tract
-          </p>
-          {zip ? (
-            <p className="mt-1 text-xs text-slate-400">ZIP {zip}</p>
-          ) : null}
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Census Tract</p>
+          {zip ? <p className="mt-1 text-xs text-slate-400">ZIP {zip}</p> : null}
           <h2 className="mt-2 text-2xl font-semibold text-slate-900">{tract.GEOID}</h2>
         </div>
-
         <div className="flex flex-col items-start gap-3 sm:items-end">
-          <span
-            className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold capitalize ring-1 ${badgeClasses[tract.risk_tier] ?? badgeClasses.low}`}
-          >
+          <span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold capitalize ring-1 ${badgeClasses[tract.risk_tier] ?? badgeClasses.low}`}>
             {tract.risk_tier}
           </span>
           <div className="text-left sm:text-right">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Housing Stability Risk
-            </p>
-            <p className="mt-1 text-3xl font-bold text-slate-900">
-              {formatPercent(tract.predicted_risk_score)}
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Housing Stability Risk</p>
+            <p className="mt-1 text-3xl font-bold text-slate-900">{formatPercent(tract.predicted_risk_score)}</p>
           </div>
         </div>
       </div>
-
       <div className="mt-6">
         <p className="text-sm font-semibold text-slate-900">Top driving factors</p>
         <ul className="mt-3 space-y-3">
           {tract.top_driving_factors?.map((factor) => {
             const shap = formatShapValue(factor.shap_value ?? 0);
             return (
-              <li
-                key={`${tract.GEOID}-${factor.feature}`}
-                className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"
-              >
+              <li key={`${tract.GEOID}-${factor.feature}`} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
                 <div>
                   <p className="font-medium text-slate-900">{factor.label}</p>
                   <p className="text-sm text-slate-500">
-                    {Number(factor.shap_value) >= 0
-                      ? "Associated with higher risk"
-                      : "Associated with lower risk"}
+                    {Number(factor.shap_value) >= 0 ? "Associated with higher risk" : "Associated with lower risk"}
                   </p>
                 </div>
                 <span className={`text-sm font-semibold ${shap.tone}`}>{shap.text}</span>
@@ -376,7 +349,36 @@ function ResultCard({ tract, zip }) {
   );
 }
 
+function ExplorerResultCard({ result, rank }) {
+  return (
+    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Rank #{rank}</p>
+          <h2 className="mt-2 text-3xl font-semibold text-slate-900">{result.zip}, {result.state_abbr}</h2>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Custom Score</p>
+          <p className={`mt-2 text-3xl font-bold ${scoreTone(result.custom_score).text}`}>{formatScore(result.custom_score)}</p>
+        </div>
+      </div>
+      <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <span className="font-medium text-slate-900">{result.tract_count}</span> tract(s) analyzed
+      </div>
+      <div className="mt-5 grid gap-3">
+        <MiniDimensionBar label="QRoots" value={result.avg_qroots_score} />
+        <MiniDimensionBar label="Housing Stability" value={result.avg_housing_stability} />
+        <MiniDimensionBar label="Walkability" value={result.avg_walk_score} />
+        <MiniDimensionBar label="Transit" value={result.avg_transit_score} />
+        <MiniDimensionBar label="Education" value={result.avg_education_score} />
+        <MiniDimensionBar label="Affordability" value={result.avg_affordability_score} />
+      </div>
+    </article>
+  );
+}
+
 export default function App() {
+  const [activeTab, setActiveTab] = useState("search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searchContext, setSearchContext] = useState("");
@@ -390,11 +392,16 @@ export default function App() {
   const [zipQRootsScore, setZipQRootsScore] = useState(null);
   const [zipSummary, setZipSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [exploreState, setExploreState] = useState("TX");
+  const [exploreWeights, setExploreWeights] = useState({ housing: 40, walk: 20, transit: 15, education: 15, affordability: 10 });
+  const [exploreMins, setExploreMins] = useState({ housing: 0, walk: 0, transit: 0, education: 0, affordability: 0 });
+  const [exploreLimit, setExploreLimit] = useState(10);
+  const [exploreLoading, setExploreLoading] = useState(false);
+  const [exploreError, setExploreError] = useState("");
+  const [exploreResults, setExploreResults] = useState([]);
 
   const zipResultStateFips = useMemo(() => {
-    if (searchMode !== "zip" || results.length === 0) {
-      return [];
-    }
+    if (searchMode !== "zip" || results.length === 0) return [];
     return [...new Set(results.map((tract) => String(tract.GEOID).slice(0, 2)))];
   }, [results, searchMode]);
 
@@ -405,29 +412,20 @@ export default function App() {
         setMapError("");
         return;
       }
-
       setMapLoading(true);
       setMapError("");
-
       try {
         const geoJsonResponses = await Promise.all(
           zipResultStateFips.map((stateFips) => {
-            const stateGeoids = results
-              .filter((t) => t.GEOID.startsWith(stateFips))
-              .map((t) => t.GEOID);
+            const stateGeoids = results.filter((t) => t.GEOID.startsWith(stateFips)).map((t) => t.GEOID);
             return fetchStateTractsGeoJson(stateFips, stateGeoids);
           })
         );
-
         const tractGeoids = new Set(results.map((tract) => tract.GEOID));
         const mergedFeatures = geoJsonResponses
           .flatMap((geoJson) => geoJson.features ?? [])
           .filter((feature) => tractGeoids.has(feature?.properties?.GEOID));
-
-        setTractGeoJson({
-          type: "FeatureCollection",
-          features: mergedFeatures,
-        });
+        setTractGeoJson({ type: "FeatureCollection", features: mergedFeatures });
       } catch (mapLoadError) {
         setTractGeoJson(null);
         setMapError(mapLoadError.message || "Unable to load map boundaries.");
@@ -435,7 +433,6 @@ export default function App() {
         setMapLoading(false);
       }
     }
-
     loadMapData();
   }, [results, searchMode, zipResultStateFips]);
 
@@ -446,26 +443,18 @@ export default function App() {
         setSummaryLoading(false);
         return;
       }
-
       setSummaryLoading(true);
       try {
         const response = await fetch(`${API_BASE_URL}/summary/${searchedZip}`);
         const payload = await response.json();
-
-        if (!response.ok) {
-          throw new Error(payload.detail || "Unable to generate neighborhood summary.");
-        }
-
+        if (!response.ok) throw new Error(payload.detail || "Unable to generate neighborhood summary.");
         setZipSummary(payload.summary || "");
       } catch (_summaryError) {
-        setZipSummary(
-          "We couldn't generate an AI neighborhood summary right now, but you can still explore the tract scores and map below."
-        );
+        setZipSummary("We couldn't generate an AI neighborhood summary right now, but you can still explore the tract scores and map below.");
       } finally {
         setSummaryLoading(false);
       }
     }
-
     loadZipSummary();
   }, [results, searchMode, searchedZip]);
 
@@ -479,24 +468,17 @@ export default function App() {
     setSearchedZip("");
     setZipSummary("");
     setSummaryLoading(false);
-
     const parsed = parseSearchInput(query);
     if (!parsed) {
       setError("Enter either an 11-digit tract GEOID or a 5-digit ZIP code.");
       return;
     }
-
     setLoading(true);
-
     try {
       if (parsed.type === "tract") {
         const response = await fetch(`${API_BASE_URL}/tract/${parsed.geoid}`);
         const payload = await response.json();
-
-        if (!response.ok) {
-          throw new Error(payload.detail || "Unable to load tract data.");
-        }
-
+        if (!response.ok) throw new Error(payload.detail || "Unable to load tract data.");
         setResults([payload]);
         setSearchContext(`Showing QRoots score for tract ${payload.GEOID}`);
         setSearchMode("tract");
@@ -505,11 +487,7 @@ export default function App() {
       } else {
         const response = await fetch(`${API_BASE_URL}/zip/${parsed.zipcode}`);
         const payload = await response.json();
-
-        if (!response.ok) {
-          throw new Error(payload.detail || "Unable to load ZIP code data.");
-        }
-
+        if (!response.ok) throw new Error(payload.detail || "Unable to load ZIP code data.");
         setResults(payload.tracts || []);
         setSearchContext(`Showing ${payload.tract_count} tracts for ZIP ${payload.zip}`);
         setSearchMode("zip");
@@ -525,25 +503,60 @@ export default function App() {
     }
   }
 
+  function handleWeightChange(key, value) {
+    setExploreWeights((currentWeights) => rebalanceWeights(currentWeights, key, value));
+  }
+
+  function handleMinChange(key, value) {
+    const clamped = Math.max(0, Math.min(100, Number(value) || 0));
+    setExploreMins((currentMins) => ({ ...currentMins, [key]: clamped }));
+  }
+
+  async function handleExplore(event) {
+    event.preventDefault();
+    setExploreLoading(true);
+    setExploreError("");
+    setExploreResults([]);
+    try {
+      const params = new URLSearchParams({
+        state_abbr: exploreState,
+        min_housing: String(exploreMins.housing),
+        min_walk: String(exploreMins.walk),
+        min_transit: String(exploreMins.transit),
+        min_education: String(exploreMins.education),
+        min_affordability: String(exploreMins.affordability),
+        weight_housing: String(exploreWeights.housing / 100),
+        weight_walk: String(exploreWeights.walk / 100),
+        weight_transit: String(exploreWeights.transit / 100),
+        weight_education: String(exploreWeights.education / 100),
+        weight_affordability: String(exploreWeights.affordability / 100),
+        limit: String(exploreLimit),
+      });
+      const response = await fetch(`${API_BASE_URL}/explore?${params.toString()}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "Unable to load explorer results.");
+      setExploreResults(payload.results || []);
+    } catch (exploreRequestError) {
+      setExploreError(exploreRequestError.message || "Something went wrong while loading explorer results.");
+    } finally {
+      setExploreLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,118,110,0.14),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] text-slate-900">
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-10">
         <header className="rounded-[2rem] border border-white/70 bg-white/80 px-8 py-10 shadow-xl shadow-slate-200/50 backdrop-blur">
-          <img
-            src="/QRoots_logo.png"
-            alt="QRoots logo"
-            className="mx-auto h-40 w-auto sm:h-48"
-          />
-          <p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.32em] text-teal-700">
-            QRoots
-          </p>
+          <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-40 w-auto sm:h-48" />
+          <p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.32em] text-teal-700">QRoots</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             Find Your Perfect Place to Grow.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-            Search by census tract GEOID or ZIP code to surface neighborhood quality,
-            housing stability risk, and the strongest drivers behind each score.
-          </p>
+  Search by ZIP code or census tract to surface neighborhood quality scores, or
+  use Explore mode to discover top neighborhoods in any state by what matters
+  most to you.
+</p>
 
           <form onSubmit={handleSearch} className="mt-8 flex flex-col gap-4 lg:flex-row">
             <input
@@ -566,67 +579,197 @@ export default function App() {
             Examples: <span className="font-medium text-slate-700">17031010100</span> or{" "}
             <span className="font-medium text-slate-700">78229</span>
           </p>
+
+          <div className="mt-6 inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("search")}
+              className={`rounded-xl px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "search" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:bg-white/60"
+              }`}
+            >
+              Search
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("explore")}
+              className={`rounded-xl px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "explore" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:bg-white/60"
+              }`}
+            >
+              Explore
+            </button>
+          </div>
         </header>
 
         <main className="mt-8">
-          {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-              {error}
-            </div>
-          ) : null}
+          {activeTab === "explore" ? (
+            <>
+              <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
+                <form onSubmit={handleExplore} className="grid gap-6">
+                  <div className="grid gap-5 lg:grid-cols-3">
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold text-slate-700">State</span>
+                      <select
+                        value={exploreState}
+                        onChange={(event) => setExploreState(event.target.value)}
+                        className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 focus:border-teal-500 focus:outline-none"
+                      >
+                        {stateOptions.map((state) => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold text-slate-700">Top Results</span>
+                      <select
+                        value={exploreLimit}
+                        onChange={(event) => setExploreLimit(Number(event.target.value))}
+                        className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 focus:border-teal-500 focus:outline-none"
+                      >
+                        {[5, 10, 25].map((value) => (
+                          <option key={value} value={value}>Top {value}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
 
-          {searchContext ? (
-            <div className="mb-5 flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-600">{searchContext}</p>
-              {results.length > 0 ? (
-                <p className="text-sm text-slate-500">{results.length} result(s)</p>
+                  <div className="grid gap-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-900">Dimension Weights</p>
+                      <p className="text-sm text-slate-500">
+                        Total: {Object.values(exploreWeights).reduce((sum, value) => sum + value, 0)}%
+                      </p>
+                    </div>
+                    {weightConfig.map((item) => (
+                      <div key={item.key} className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium text-slate-700">{item.label}</label>
+                          <span className="text-sm font-semibold text-slate-900">{exploreWeights[item.key]}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={exploreWeights[item.key]}
+                          onChange={(event) => handleWeightChange(item.key, event.target.value)}
+                          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                    {weightConfig.map((item) => (
+                      <label key={item.key} className="grid gap-2">
+                        <span className="text-sm font-semibold text-slate-700">Min {item.label}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={exploreMins[item.key]}
+                          onChange={(event) => handleMinChange(item.key, event.target.value)}
+                          className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 focus:border-teal-500 focus:outline-none"
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={exploreLoading}
+                      className="inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    >
+                      {exploreLoading ? "Finding..." : "Find My Neighborhood"}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {exploreError ? (
+                <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                  {exploreError}
+                </div>
               ) : null}
-            </div>
-          ) : null}
 
-          {results.length > 0 ? (
-            <QRootsSummaryCard
-              overallScore={searchMode === "zip" ? zipQRootsScore : results[0]?.qroots_score}
-              tract={results[0]}
-            />
-          ) : null}
+              {exploreResults.length > 0 ? (
+                <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                  {exploreResults.map((result, index) => (
+                    <ExplorerResultCard
+                      key={`${result.zip}-${result.state_abbr}`}
+                      result={result}
+                      rank={index + 1}
+                    />
+                  ))}
+                </div>
+              ) : !exploreLoading ? (
+                <section className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
+                  <h2 className="text-2xl font-semibold text-slate-900">Explore top ZIP codes by what matters most to you</h2>
+                  <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">
+                    Adjust the score weights and minimum thresholds to surface neighborhoods
+                    that best fit your priorities across housing stability, walkability,
+                    transit, education, and affordability.
+                  </p>
+                </section>
+              ) : null}
+            </>
+          ) : (
+            <>
+              {error ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                  {error}
+                </div>
+              ) : null}
 
-          {searchMode === "zip" && results.length > 0 ? (
-            <NeighborhoodSummaryCard summary={zipSummary} loading={summaryLoading} />
-          ) : null}
+              {searchContext ? (
+                <div className="mb-5 flex items-center justify-between">
+                  <p className="text-sm font-medium text-slate-600">{searchContext}</p>
+                  {results.length > 0 ? <p className="text-sm text-slate-500">{results.length} result(s)</p> : null}
+                </div>
+              ) : null}
 
-          {searchMode === "zip" && results.length > 0 ? (
-            <ZipResultsMap
-              tracts={results}
-              tractGeoJson={tractGeoJson}
-              mapError={mapError}
-              mapLoading={mapLoading}
-            />
-          ) : null}
+              {results.length > 0 ? (
+                <QRootsSummaryCard
+                  overallScore={searchMode === "zip" ? zipQRootsScore : results[0]?.qroots_score}
+                  tract={results[0]}
+                />
+              ) : null}
 
-          {results.length > 0 ? (
-            <div className="mt-6 grid gap-5 lg:grid-cols-2">
-              {results.map((tract) => (
-                <ResultCard key={tract.GEOID} tract={tract} zip={searchedZip} />
-              ))}
-            </div>
-          ) : !loading ? (
-            <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
-              <img
-                src="/QRoots_logo.png"
-                alt="QRoots logo"
-                className="mx-auto h-52 w-auto sm:h-64"
-              />
-              <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-900">
-                Find Your Perfect Place to Grow.
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                QRoots helps you explore neighborhood quality, housing stability, and
-                community context through tract-level scores, interactive maps, and
-                explainable drivers behind each result.
-              </p>
-            </section>
-          ) : null}
+              {searchMode === "zip" && results.length > 0 ? (
+                <NeighborhoodSummaryCard summary={zipSummary} loading={summaryLoading} />
+              ) : null}
+
+              {searchMode === "zip" && results.length > 0 ? (
+                <ZipResultsMap
+                  tracts={results}
+                  tractGeoJson={tractGeoJson}
+                  mapError={mapError}
+                  mapLoading={mapLoading}
+                />
+              ) : null}
+
+              {results.length > 0 ? (
+                <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                  {results.map((tract) => (
+                    <ResultCard key={tract.GEOID} tract={tract} zip={searchedZip} />
+                  ))}
+                </div>
+              ) : !loading ? (
+                <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
+                  <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-52 w-auto sm:h-64" />
+                  <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-900">
+                    Find Your Perfect Place to Grow.
+                  </h2>
+                  <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                    QRoots helps you explore neighborhood quality, housing stability, and
+                    community context through tract-level scores, interactive maps, and
+                    explainable drivers behind each result.
+                  </p>
+                </section>
+              ) : null}
+            </>
+          )}
         </main>
 
         <footer className="mt-10 rounded-[2rem] border border-white/70 bg-white/70 px-8 py-6 shadow-sm shadow-slate-200/40">
@@ -652,7 +795,6 @@ export default function App() {
             View the GitHub repository →
           </a>
         </footer>
-
       </div>
     </div>
   );
