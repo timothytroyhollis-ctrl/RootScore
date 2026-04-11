@@ -1197,4 +1197,69 @@ result.state_abbr for dynamic URL generation.
 - All 7 links working correctly including MAP LGBT state profile
 - Show/Hide toggle working on Explorer cards
 
+**Next:** Prompt 036 — Emoji Icons on Resource Links
+
+---
+
+## Prompt 036 — Emoji Icons on Resource Links
+**Date:** 2026-04-10
+**Purpose:** Add emoji icons to all resource link labels in both ResultCard and
+ExplorerResultCard for visual polish and scannability.
+
+**Prompt:**
+Update the resources array in both ResultCard and ExplorerResultCard in app/src/App.jsx
+to add emoji icons to each resource label. Use these exact labels: '🏠 Housing
+Assistance', '🚶 Walk Score', '🚌 Transit', '🎓 Schools', '💰 Rental Affordability',
+'🧠 Mental Health Resources', '🏳️‍🌈 LGBT Resources'. Keep all href, enabled, and
+disabled logic completely unchanged. Only the label strings change.
+
+**Codex Output Summary:**
+Codex updated the resources array in both ResultCard and ExplorerResultCard replacing
+all seven label strings with emoji-prefixed versions. All href, enabled, and disabled
+logic preserved exactly.
+
+**Key Design Decisions:**
+- Emoji chosen to match each resource category for instant visual recognition
+- Labels updated in both ResultCard and ExplorerResultCard for consistency
+- No logic changes — purely cosmetic label update
+
+**Results:**
+- Emoji icons visible on all resource links in Search and Explorer result cards
+- Resource section feels more polished and scannable for users and judges
+
+**Next:** Prompt 037 — Update README
+
+---
+
+## Prompt 037 — Update README
+**Date:** 2026-04-10
+**Purpose:** Update README.md to reflect all features built since the original version
+including Explorer mode, LGBT Policy score, resource links, and AI neighborhood summary.
+
+**Prompt:**
+Update README.md for the QRoots project to reflect all current features. Update the
+Features section to include Explorer mode with six customizable dimension weight sliders,
+LGBT Policy score from MAP, collapsible resource links with seven contextual links per
+neighborhood, and AI neighborhood summary powered by OpenAI gpt-4o-mini. Add Movement
+Advancement Project MAP to Data Sources. Update How It Works to mention the Explore tab
+and six dimensions. Update QRoots Score Methodology to note LGBT Policy as an optional
+Explorer-only dimension normalized from MAP state tally scores. Keep live demo URL as
+https://qroots.onrender.com and GitHub link as https://github.com/timothytroyhollis-ctrl/QRoots.
+
+**Codex Output Summary:**
+Codex updated README.md with expanded Features section, MAP added to Data Sources,
+updated How It Works with seven steps covering the Explore tab, and QRoots Score
+Methodology section updated to include the optional LGBT Policy Explorer dimension.
+
+**Key Design Decisions:**
+- README now accurately reflects all 37 Codex prompts worth of features
+- LGBT Policy documented as Explorer-only optional dimension with MAP attribution
+- Seven resource link categories listed explicitly for judges
+- Ethics section preserved and unchanged
+
+**Results:**
+- README fully reflects current live app at https://qroots.onrender.com
+- All data sources documented including MAP
+- Methodology section transparent about both core and optional dimensions
+
 **Next:** Final contest submission on Handshake before April 30, 2026
