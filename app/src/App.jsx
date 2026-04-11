@@ -376,7 +376,7 @@ function ResultCard({ tract, zip }) {
     },
     {
       label: "Walk Score",
-      href: zipEnabled ? `https://www.walkscore.com/score/zip/${tractZip}` : "#",
+      href: zipEnabled ? `https://www.walkscore.com/score/${tractZip}` : "#",
       enabled: zipEnabled,
     },
     {
