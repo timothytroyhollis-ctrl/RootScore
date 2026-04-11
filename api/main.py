@@ -327,11 +327,13 @@ def explore(
     min_transit: float = 0,
     min_education: float = 0,
     min_affordability: float = 0,
+    min_lgbt: float = 0,
     weight_housing: float = 0.40,
     weight_walk: float = 0.20,
     weight_transit: float = 0.15,
     weight_education: float = 0.15,
     weight_affordability: float = 0.10,
+    weight_lgbt: float = 0.0,
     limit: int = Query(10, ge=1, le=25),
 ) -> dict:
     explorer_df = app.state.explorer_df.copy()
@@ -344,6 +346,7 @@ def explore(
         & (filtered_df["transit_score"] >= min_transit)
         & (filtered_df["education_score"] >= min_education)
         & (filtered_df["affordability_score"] >= min_affordability)
+        & (filtered_df["lgbt_policy_score"] >= min_lgbt)
     ].copy()
 
     if filtered_df.empty:
@@ -355,6 +358,7 @@ def explore(
         + filtered_df["transit_score"] * weight_transit
         + filtered_df["education_score"] * weight_education
         + filtered_df["affordability_score"] * weight_affordability
+        + filtered_df["lgbt_policy_score"] * weight_lgbt
     )
 
     grouped_df = (
@@ -369,6 +373,7 @@ def explore(
             avg_transit_score=("transit_score", "mean"),
             avg_education_score=("education_score", "mean"),
             avg_affordability_score=("affordability_score", "mean"),
+            avg_lgbt_score=("lgbt_policy_score", "mean"),
             tract_count=("GEOID", "nunique"),
         )
         .sort_values("custom_score", ascending=False)
@@ -392,6 +397,7 @@ def explore(
                 "avg_transit_score": float(row["avg_transit_score"]),
                 "avg_education_score": float(row["avg_education_score"]),
                 "avg_affordability_score": float(row["avg_affordability_score"]),
+                "avg_lgbt_score": float(row["avg_lgbt_score"]),
                 "tract_count": int(row["tract_count"]),
             }
         )
