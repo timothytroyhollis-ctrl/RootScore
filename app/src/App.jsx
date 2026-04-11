@@ -341,13 +341,41 @@ function NeighborhoodSummaryCard({ summary, loading }) {
 }
 
 function QRootsSummaryCard({ overallScore, tract }) {
+  const [copied, setCopied] = useState(false);
   const tone = scoreTone(overallScore);
   const dimensionKeys = ["housing_stability_score", "walk_score", "transit_score", "education_score", "affordability_score"];
+
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (_error) {
+      setCopied(false);
+    }
+  }
+
   return (
     <section className={`mb-6 rounded-[2rem] border bg-gradient-to-br ${tone.panel} p-6 shadow-sm shadow-slate-200/50 ring-1 ${tone.ring}`}>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">QRoots Score</p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">QRoots Score</p>
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-white"
+            >
+              Copy Link
+            </button>
+            <span
+              className={`text-xs font-medium text-emerald-700 transition-opacity duration-300 ${
+                copied ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              Copied!
+            </span>
+          </div>
           <div className="mt-3 flex items-end gap-3">
             <span className={`text-5xl font-bold tracking-tight ${tone.text}`}>{formatScore(overallScore)}</span>
             <span className="pb-1 text-base font-medium text-slate-500">/ 100</span>
@@ -689,8 +717,26 @@ export default function App() {
     loadZipSummary();
   }, [results, searchMode, searchedZip]);
 
-  async function handleSearch(event) {
-    event.preventDefault();
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const zipParam = params.get("zip");
+    const geoidParam = params.get("geoid");
+
+    if (zipParam) {
+      setActiveTab("search");
+      setQuery(zipParam);
+      runSearch(zipParam, false);
+      return;
+    }
+
+    if (geoidParam) {
+      setActiveTab("search");
+      setQuery(geoidParam);
+      runSearch(geoidParam, false);
+    }
+  }, []);
+
+  async function runSearch(searchValue, shouldPushState = true) {
     setError("");
     setResults([]);
     setTractGeoJson(null);
@@ -699,11 +745,14 @@ export default function App() {
     setSearchedZip("");
     setZipSummary("");
     setSummaryLoading(false);
-    const parsed = parseSearchInput(query);
+
+    const parsed = parseSearchInput(searchValue);
     if (!parsed) {
       setError("Enter either an 11-digit tract GEOID or a 5-digit ZIP code.");
       return;
     }
+
+    setQuery(searchValue);
     setLoading(true);
     try {
       if (parsed.type === "tract") {
@@ -715,6 +764,9 @@ export default function App() {
         setSearchMode("tract");
         setZipQRootsScore(payload.qroots_score ?? null);
         setSearchedZip("");
+        if (shouldPushState) {
+          window.history.pushState({}, "", `?geoid=${payload.GEOID}`);
+        }
       } else {
         const response = await fetch(`${API_BASE_URL}/zip/${parsed.zipcode}`);
         const payload = await response.json();
@@ -724,6 +776,9 @@ export default function App() {
         setSearchMode("zip");
         setZipQRootsScore(payload.zip_qroots_score ?? null);
         setSearchedZip(parsed.zipcode);
+        if (shouldPushState) {
+          window.history.pushState({}, "", `?zip=${payload.zip}`);
+        }
       }
     } catch (searchError) {
       setError(searchError.message || "Something went wrong while searching.");
@@ -732,6 +787,11 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSearch(event) {
+    event.preventDefault();
+    await runSearch(query, true);
   }
 
   function handleWeightChange(key, value) {
