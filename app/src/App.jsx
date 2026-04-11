@@ -375,41 +375,41 @@ function ResultCard({ tract, zip }) {
   const zipEnabled = Boolean(tractZip);
   const resources = [
     {
-      label: "Housing Assistance",
+      label: "🏠 Housing Assistance",
       href: "https://www.hud.gov/topics/rental_assistance",
       enabled: true,
     },
     {
-      label: "Walk Score",
+      label: "🚶 Walk Score",
       href: zipEnabled ? `https://www.walkscore.com/score/${tractZip}` : "#",
       enabled: zipEnabled,
     },
     {
-      label: "Transit",
+      label: "🚌 Transit",
       href: zipEnabled
         ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${tractZip}`
         : "#",
       enabled: zipEnabled,
     },
     {
-      label: "Schools",
+      label: "🎓 Schools",
       href: zipEnabled ? `https://www.greatschools.org/search/search.page?zip=${tractZip}` : "#",
       enabled: zipEnabled,
     },
     {
-      label: "Rental Affordability",
+      label: "💰 Rental Affordability",
       href: "https://www.huduser.gov/portal/datasets/fmr.html",
       enabled: true,
     },
     {
-      label: "Mental Health Resources",
+      label: "🧠 Mental Health Resources",
       href: zipEnabled ? `https://findtreatment.gov/?zip=${tractZip}&sType=MH` : "#",
       enabled: zipEnabled,
     },
     {
-      label: "LGBT Resources",
+      label: "🏳️‍🌈 LGBT Resources",
       href: `https://www.mapresearch.org/equality-maps/profile_state/${stateInfo?.abbr ?? ""}`,
-    enabled: Boolean(stateInfo),
+      enabled: Boolean(stateInfo),
     },
   ];
 
@@ -500,39 +500,39 @@ function ExplorerResultCard({ result, rank }) {
   const zipEnabled = Boolean(result.zip);
   const resources = [
     {
-      label: "Housing Assistance",
+      label: "🏠 Housing Assistance",
       href: "https://www.hud.gov/topics/rental_assistance",
       enabled: true,
     },
     {
-      label: "Walk Score",
+      label: "🚶 Walk Score",
       href: zipEnabled ? `https://www.walkscore.com/score/${result.zip}` : "#",
       enabled: zipEnabled,
     },
     {
-      label: "Transit",
+      label: "🚌 Transit",
       href: zipEnabled
         ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${result.zip}`
         : "#",
       enabled: zipEnabled,
     },
     {
-      label: "Schools",
+      label: "🎓 Schools",
       href: zipEnabled ? `https://www.greatschools.org/search/search.page?zip=${result.zip}` : "#",
       enabled: zipEnabled,
     },
     {
-      label: "Rental Affordability",
+      label: "💰 Rental Affordability",
       href: "https://www.huduser.gov/portal/datasets/fmr.html",
       enabled: true,
     },
     {
-      label: "Mental Health Resources",
+      label: "🧠 Mental Health Resources",
       href: zipEnabled ? `https://findtreatment.gov/?zip=${result.zip}&sType=MH` : "#",
       enabled: zipEnabled,
     },
     {
-      label: "LGBT Resources",
+      label: "🏳️‍🌈 LGBT Resources",
       href: stateInfo
         ? `https://www.mapresearch.org/equality-maps/profile_state/${stateInfo.abbr}`
         : "#",
