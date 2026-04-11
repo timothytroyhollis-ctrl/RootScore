@@ -1,4 +1,4 @@
-# RootScore — Codex Prompt Log
+# QRoots — Codex Prompt Log
 **Project:** QRoots — Neighborhood Quality of Life Tool 
 **Contest:** OpenAI Codex Contest 2026  
 **Author:** Tim Hollis
@@ -607,7 +607,7 @@ design language.
 
 **Services Deployed:**  
 - FastAPI back end → https://rootscore-api.onrender.com
-- React front end → https://rootscore.onrender.com
+- React front end → https://qroots.onrender.com
 
 **Key Decisions:**  
 - Render.com chosen for free tier, zero credit card requirement, and public URLs
@@ -850,7 +850,7 @@ formatting, and links to the live demo and Codex prompt log.
 - Ethics section explicitly prohibits use for tenant screening or surveillance
 - Methodology weights documented publicly for transparency
 - Codex build process section links to docs/codex-prompts.md for judges
-- Live demo URL points to https://rootscore.onrender.com
+- Live demo URL points to https://qroots.onrender.com
 
 **Next:** Prompt 026 — OpenAI Neighborhood Summary Endpoint
 
@@ -934,4 +934,107 @@ and updated tagline throughout.
 - AI neighborhood summary appearing after QRoots score card on ZIP searches
 - Empty state shows logo with tagline and description
 
-**Next:** Contest submission on Handshake before April 30, 2026
+**Next:** Prompt 028 — Explorer Index Data Pipeline
+
+---
+
+## Prompt 028 — Explorer Index Data Pipeline
+**Date:** 2026-04-09
+**Purpose:** Build an enriched tract-level index to power the QRoots Explorer feature.
+
+**Prompt:**
+Write a Python script called build_explorer_index.py that enriches
+data/processed/qroots_scores.csv to support the QRoots Explorer feature. Load
+qroots_scores.csv. Extract state_fips from the first 2 digits of GEOID. Map state_fips
+to state_abbr using a hardcoded dictionary of all 50 states plus DC. Load
+data/processed/zip_tract_crosswalk.csv and join it to add a zip column to each tract
+row using the first matching ZIP per tract. Save to data/processed/explorer_index.csv
+with columns: GEOID, zip, state_fips, state_abbr, qroots_score, housing_stability_score,
+walk_score, transit_score, education_score, affordability_score.
+
+**Codex Output Summary:**
+Codex generated build_explorer_index.py with state FIPS to abbreviation mapping for
+all 50 states plus DC, ZIP crosswalk join using first matching ZIP per tract, and
+clean deduplication on GEOID before saving.
+
+**Key Design Decisions:**
+- State derived from first 2 digits of GEOID — no additional API call needed
+- First matching ZIP per tract chosen to keep one-to-one tract-to-ZIP relationship
+- explorer_index.csv serves as the dedicated data source for the Explorer endpoint
+
+**Results:**
+- 85,396 rows saved to data/processed/explorer_index.csv
+- All 50 states plus DC represented
+- Small number of tracts have NaN zip due to crosswalk coverage gaps
+
+**Next:** Prompt 029 — Explorer API Endpoint
+
+---
+
+## Prompt 029 — Explorer API Endpoint
+**Date:** 2026-04-09
+**Purpose:** Add GET /explore endpoint to support state-level neighborhood discovery
+with custom dimension weighting and minimum score filtering.
+
+**Prompt:**
+Update api/main.py to add GET /explore endpoint. Load explorer_index.csv on startup.
+Accept query parameters: state_abbr (required), min scores for each dimension, weight
+for each dimension, and limit (max 25). Filter by state and minimum scores, compute
+custom_score using provided weights, group by ZIP averaging all scores, rank by
+custom_score descending, return top results with zip, state_abbr, custom_score, all
+five avg dimension scores, and tract_count.
+
+**Codex Output Summary:**
+Codex generated the /explore endpoint with state filtering, minimum score filtering,
+custom weighted scoring, ZIP-level aggregation, and ranked results. Used FastAPI Query
+parameters with defaults matching the standard QRoots weights.
+
+**Key Design Decisions:**
+- Default weights match QRoots composite score weights for consistency
+- ZIP-level aggregation averages all tract scores within each ZIP
+- Custom score computed at tract level then averaged to ZIP level
+- limit capped at 25 to prevent oversized responses
+
+**Results:**
+- GET /explore?state_abbr=TX returns top 10 Texas ZIP codes by default weighting
+- GET /explore?state_abbr=TX&weight_walk=0.60&weight_housing=0.10 returns most
+  walkable ZIP codes in Texas
+- Weights correctly shift rankings between default and custom configurations
+
+**Next:** Prompt 030 — Explorer UI
+
+---
+
+## Prompt 030 — Explorer UI with Tabs in Header
+**Date:** 2026-04-09
+**Purpose:** Add Explore tab to App.jsx with state selector, dimension weight sliders,
+minimum score filters, ranked ZIP results, and tabs integrated into the header card.
+
+**Prompt:**
+Add an Explorer mode to app/src/App.jsx alongside the existing ZIP/tract search. Add
+two tabs inside the header card: Search (existing) and Explore (new). Explore tab has:
+state dropdown, five dimension weight sliders that always sum to 100 using proportional
+rebalancing, five minimum score inputs, limit selector, and Find My Neighborhood button.
+Call GET /explore with weights as decimals. Display results as ranked cards with ZIP,
+state, custom score, and mini dimension bars. Updated header description to reference
+both Search and Explore modes.
+
+**Codex Output Summary:**
+Codex added rebalanceWeights helper function, ExplorerResultCard and MiniDimensionBar
+components, full Explorer form with sliders and min inputs, handleExplore async function,
+and tab switching logic. Tabs moved into header card below search form for integrated UX.
+
+**Key Design Decisions:**
+- rebalanceWeights uses proportional allocation to keep sliders summing to 100
+- Tabs placed inside header card rather than floating above main content
+- Explorer results show rank number, ZIP, state, custom score, and all six dimension bars
+- Existing Search tab functionality completely unchanged
+- Header description updated to mention both Search and Explore modes
+
+**Results:**
+- Explore tab live at https://qroots.onrender.com
+- State selector with all 50 states plus DC
+- Weight sliders rebalance proportionally when adjusted
+- Find My Neighborhood returns ranked ZIP cards with dimension breakdowns
+
+**Next:** Final contest submission on Handshake before April 30, 2026

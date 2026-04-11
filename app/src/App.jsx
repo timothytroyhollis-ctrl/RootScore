@@ -56,6 +56,60 @@ const weightConfig = [
   { key: "affordability", label: "Affordability" },
 ];
 
+const stateInfoByFips = {
+  "01": { abbr: "AL", name: "Alabama" },
+  "02": { abbr: "AK", name: "Alaska" },
+  "04": { abbr: "AZ", name: "Arizona" },
+  "05": { abbr: "AR", name: "Arkansas" },
+  "06": { abbr: "CA", name: "California" },
+  "08": { abbr: "CO", name: "Colorado" },
+  "09": { abbr: "CT", name: "Connecticut" },
+  "10": { abbr: "DE", name: "Delaware" },
+  "11": { abbr: "DC", name: "District of Columbia" },
+  "12": { abbr: "FL", name: "Florida" },
+  "13": { abbr: "GA", name: "Georgia" },
+  "15": { abbr: "HI", name: "Hawaii" },
+  "16": { abbr: "ID", name: "Idaho" },
+  "17": { abbr: "IL", name: "Illinois" },
+  "18": { abbr: "IN", name: "Indiana" },
+  "19": { abbr: "IA", name: "Iowa" },
+  "20": { abbr: "KS", name: "Kansas" },
+  "21": { abbr: "KY", name: "Kentucky" },
+  "22": { abbr: "LA", name: "Louisiana" },
+  "23": { abbr: "ME", name: "Maine" },
+  "24": { abbr: "MD", name: "Maryland" },
+  "25": { abbr: "MA", name: "Massachusetts" },
+  "26": { abbr: "MI", name: "Michigan" },
+  "27": { abbr: "MN", name: "Minnesota" },
+  "28": { abbr: "MS", name: "Mississippi" },
+  "29": { abbr: "MO", name: "Missouri" },
+  "30": { abbr: "MT", name: "Montana" },
+  "31": { abbr: "NE", name: "Nebraska" },
+  "32": { abbr: "NV", name: "Nevada" },
+  "33": { abbr: "NH", name: "New Hampshire" },
+  "34": { abbr: "NJ", name: "New Jersey" },
+  "35": { abbr: "NM", name: "New Mexico" },
+  "36": { abbr: "NY", name: "New York" },
+  "37": { abbr: "NC", name: "North Carolina" },
+  "38": { abbr: "ND", name: "North Dakota" },
+  "39": { abbr: "OH", name: "Ohio" },
+  "40": { abbr: "OK", name: "Oklahoma" },
+  "41": { abbr: "OR", name: "Oregon" },
+  "42": { abbr: "PA", name: "Pennsylvania" },
+  "44": { abbr: "RI", name: "Rhode Island" },
+  "45": { abbr: "SC", name: "South Carolina" },
+  "46": { abbr: "SD", name: "South Dakota" },
+  "47": { abbr: "TN", name: "Tennessee" },
+  "48": { abbr: "TX", name: "Texas" },
+  "49": { abbr: "UT", name: "Utah" },
+  "50": { abbr: "VT", name: "Vermont" },
+  "51": { abbr: "VA", name: "Virginia" },
+  "53": { abbr: "WA", name: "Washington" },
+  "54": { abbr: "WV", name: "West Virginia" },
+  "55": { abbr: "WI", name: "Wisconsin" },
+  "56": { abbr: "WY", name: "Wyoming" },
+};
+
 function parseSearchInput(value) {
   const trimmed = value.trim();
   const digitsOnly = trimmed.replace(/\D/g, "");
@@ -308,6 +362,52 @@ function QRootsSummaryCard({ overallScore, tract }) {
 }
 
 function ResultCard({ tract, zip }) {
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const stateFips = String(tract.GEOID || "").slice(0, 2);
+  const stateInfo = stateInfoByFips[stateFips];
+  const stateName = stateInfo?.name ?? "Unknown";
+  const tractZip = zip || "";
+  const zipEnabled = Boolean(tractZip);
+  const resources = [
+    {
+      label: "Housing Assistance",
+      href: "https://www.hud.gov/topics/rental_assistance",
+      enabled: true,
+    },
+    {
+      label: "Walk Score",
+      href: zipEnabled ? `https://www.walkscore.com/score/zip/${tractZip}` : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "Transit",
+      href: zipEnabled
+        ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${tractZip}`
+        : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "Schools",
+      href: zipEnabled ? `https://www.greatschools.org/search/search.page?zip=${tractZip}` : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "Rental Affordability",
+      href: "https://www.huduser.gov/portal/datasets/fmr.html",
+      enabled: true,
+    },
+    {
+      label: "Mental Health Resources",
+      href: zipEnabled ? `https://findtreatment.gov/?zip=${tractZip}&sType=MH` : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "LGBT Resources",
+      href: `https://www.mapresearch.org/equality-maps/profile_state/${stateInfo?.abbr ?? ""}`,
+    enabled: Boolean(stateInfo),
+    },
+  ];
+
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -344,6 +444,46 @@ function ResultCard({ tract, zip }) {
             );
           })}
         </ul>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80">
+        <button
+          type="button"
+          onClick={() => setResourcesOpen((open) => !open)}
+          className="flex w-full items-center justify-between px-4 py-4 text-left"
+        >
+          <span className="text-sm font-semibold text-slate-900">Resources</span>
+          <span className="text-sm font-medium text-slate-500">
+            {resourcesOpen ? "Hide" : "Show"}
+          </span>
+        </button>
+
+        {resourcesOpen ? (
+          <div className="border-t border-slate-200 px-4 py-4">
+            <div className="grid gap-3">
+              {resources.map((resource) => (
+                resource.enabled ? (
+                  <a
+                    key={resource.label}
+                    href={resource.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-teal-700 transition hover:bg-teal-50 hover:text-teal-800"
+                  >
+                    {resource.label}
+                  </a>
+                ) : (
+                  <div
+                    key={resource.label}
+                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-400"
+                  >
+                    {resource.label} unavailable without ZIP context
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </article>
   );
