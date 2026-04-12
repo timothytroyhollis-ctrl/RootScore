@@ -641,7 +641,7 @@ function ResultCard({ tract, zip }) {
   );
 }
 
-function ExplorerResultCard({ result, rank }) {
+function ExplorerResultCard({ result, rank, onViewFullReport }) {
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const stateInfo = stateInfoByAbbr[result.state_abbr];
   const zipEnabled = Boolean(result.zip);
@@ -751,6 +751,13 @@ function ExplorerResultCard({ result, rank }) {
           </div>
         ) : null}
       </div>
+      <button
+        type="button"
+        onClick={() => onViewFullReport?.(result.zip)}
+        className="mt-6 h-11 w-full rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        View Full Report
+      </button>
     </article>
   );
 }
@@ -777,6 +784,7 @@ export default function App() {
   const [exploreLoading, setExploreLoading] = useState(false);
   const [exploreError, setExploreError] = useState("");
   const [exploreResults, setExploreResults] = useState([]);
+  const [exploreUrlCopied, setExploreUrlCopied] = useState(false);
 
   const zipResultStateFips = useMemo(() => {
     if (searchMode !== "zip" || results.length === 0) return [];
@@ -948,11 +956,29 @@ export default function App() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.detail || "Unable to load explorer results.");
       setExploreResults(payload.results || []);
+      window.history.pushState({}, "", `?explore=1&state=${exploreState}&limit=${exploreLimit}`);
     } catch (exploreRequestError) {
       setExploreError(exploreRequestError.message || "Something went wrong while loading explorer results.");
     } finally {
       setExploreLoading(false);
     }
+  }
+
+  async function handleCopyExploreLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setExploreUrlCopied(true);
+      window.setTimeout(() => setExploreUrlCopied(false), 2000);
+    } catch (_error) {
+      setExploreUrlCopied(false);
+    }
+  }
+
+  async function handleViewFullExploreReport(zip) {
+    if (!zip) return;
+    setActiveTab("search");
+    setQuery(zip);
+    await runSearch(zip, true);
   }
 
   return (
@@ -1106,15 +1132,34 @@ export default function App() {
               ) : null}
 
               {exploreResults.length > 0 ? (
-                <div className="mt-6 grid gap-5 lg:grid-cols-2">
-                  {exploreResults.map((result, index) => (
-                    <ExplorerResultCard
-                      key={`${result.zip}-${result.state_abbr}`}
-                      result={result}
-                      rank={index + 1}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="mt-6 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCopyExploreLink}
+                      className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                    >
+                      Copy Link
+                    </button>
+                    <span
+                      className={`text-xs font-medium text-emerald-700 transition-opacity duration-300 ${
+                        exploreUrlCopied ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      Copied!
+                    </span>
+                  </div>
+                  <div className="mt-4 grid gap-5 lg:grid-cols-2">
+                    {exploreResults.map((result, index) => (
+                      <ExplorerResultCard
+                        key={`${result.zip}-${result.state_abbr}`}
+                        result={result}
+                        rank={index + 1}
+                        onViewFullReport={handleViewFullExploreReport}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : !exploreLoading ? (
                 <section className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
                   <h2 className="text-2xl font-semibold text-slate-900">Explore top ZIP codes by what matters most to you</h2>
