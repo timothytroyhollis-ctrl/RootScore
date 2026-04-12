@@ -1262,4 +1262,108 @@ Methodology section updated to include the optional LGBT Policy Explorer dimensi
 - All data sources documented including MAP
 - Methodology section transparent about both core and optional dimensions
 
+**Next:** Prompt 038 — Shareable URLs and Copy Link Button
+
+---
+
+## Prompt 038 — Shareable URLs and Copy Link Button
+**Date:** 2026-04-11
+**Purpose:** Add shareable URL support so users can share direct links to
+neighborhood results and a Copy Link button on the QRoots summary card.
+
+**Prompt:**
+Update app/src/App.jsx to support shareable URLs. When a user searches a ZIP
+code update the browser URL to ?zip=XXXXX using window.history.pushState. When
+they search a GEOID update the URL to ?geoid=XXXXXXXXXXX. On page load read
+these URL params and if present automatically trigger the search. Add a Copy
+Link button to QRootsSummaryCard that copies the current page URL to clipboard
+and shows a brief Copied! confirmation that fades after 2 seconds.
+
+**Codex Output Summary:**
+Codex extracted search logic into a runSearch function called by both handleSearch
+and the startup useEffect. Added window.history.pushState calls after successful
+searches. Added URLSearchParams reading on mount to auto-trigger searches from
+URL params. Added Copy Link button with copied state and setTimeout fade.
+
+**Key Design Decisions:**
+- runSearch extracted from handleSearch to allow programmatic search on page load
+- shouldPushState parameter prevents double-pushing state on URL-triggered loads
+- Copy Link placed inline with QRoots Score label for minimal footprint
+- Copied! confirmation uses opacity transition not mount/unmount for smoothness
+
+**Results:**
+- Searching 78229 updates URL to ?zip=78229
+- Sharing that URL auto-loads results on page visit
+- Copy Link button copies current URL and shows Copied! for 2 seconds
+- GEOID searches update to ?geoid=XXXXXXXXXXX
+
+**Next:** Prompt 039 — Vibrant Landing Page Redesign
+
+---
+
+## Prompt 039 — Vibrant Landing Page Redesign
+**Date:** 2026-04-11
+**Purpose:** Make the landing page more exciting with a larger logo, vibrant
+gradient, and a three-card feature showcase replacing the bland empty state.
+
+**Prompt:**
+Redesign the landing page of app/src/App.jsx. Increase logo to h-56 sm:h-64
+and remove the small QRoots text label. Make background gradient more vibrant.
+Replace the empty state with three feature highlight cards: Search Any
+Neighborhood, Explore by What Matters, AI-Powered Insights. Style cards with
+white background, rounded corners, colored emoji pill, and subtle shadow.
+
+**Codex Output Summary:**
+Codex increased logo size, removed redundant QRoots label, updated background
+gradient to a richer teal/indigo multi-layer gradient, and replaced the empty
+state section with a three-column feature showcase grid with emoji pill headers.
+
+**Key Design Decisions:**
+- Single large logo replaces small logo plus text label redundancy
+- Feature cards give judges immediate context on app capabilities
+- Three distinct emoji colors: teal for Search, indigo for Explore, emerald for AI
+- Empty state now doubles as a feature explainer rather than just a placeholder
+
+**Results:**
+- Landing page feels product-forward and engaging
+- Feature cards visible immediately below the header on first load
+- Logo prominent at top with no redundant text label
+
+**Next:** Prompt 040 — Roots SVG Watermark and Green Gradient
+
+---
+
+## Prompt 040 — Roots SVG Watermark and Green Gradient
+**Date:** 2026-04-11
+**Purpose:** Add a roots and branches SVG watermark behind the gradient and
+deepen the background color to a richer forest green.
+
+**Prompt:**
+Add an inline SVG as a fixed full-screen background watermark with roots and
+branches spreading from bottom center upward using curved path elements in
+forest green #15803d at opacity-[0.07]. Update page background to a deeper
+green gradient.
+
+**Codex Output Summary:**
+Codex added fixed positioned SVG with 30+ curved path elements forming a root
+and branch network, updated preserveAspectRatio and viewBox. Updated background
+gradient to deeper green values.
+
+**Real-World Discoveries:**
+- SVG paths positioned at y=900-1200 were off screen due to viewBox mismatch
+- preserveAspectRatio xMidYMid slice clipped the visible paths
+- Logo PNG has white opaque background — not transparent — making it unusable
+  as a CSS watermark since it renders as a white rectangle at low opacity
+- After multiple attempts to fix SVG coordinates and opacity the watermark
+  approach was abandoned in favor of gradient-only background
+
+**Key Design Decisions:**
+- SVG watermark removed after repeated rendering failures
+- Earthy forest green gradient chosen as replacement visual anchor
+- Final gradient: radial dark forest green at top fading to lighter emerald
+
+**Results:**
+- Clean earthy green gradient live at https://qroots.onrender.com
+- No watermark — gradient alone provides the nature/roots visual theme
+
 **Next:** Final contest submission on Handshake before April 30, 2026
