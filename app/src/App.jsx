@@ -560,7 +560,7 @@ function ResultCard({ tract, zip }) {
     },
     {
       label: "🏳️‍🌈 LGBT Community Centers",
-      href: "https://www.lgbtqcenters.org/LGBTCenters",
+      href: "https://www.lgbtqcenters.org",
       enabled: true,
     },
   ];
@@ -692,7 +692,7 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
     },
     {
       label: "🏳️‍🌈 LGBT Community Centers",
-      href: "https://www.lgbtqcenters.org/LGBTCenters",
+      href: "https://www.lgbtqcenters.org",
       enabled: true,
     },
   ];
