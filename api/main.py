@@ -241,7 +241,15 @@ def get_zip(zipcode: str) -> dict:
 
 
 @app.get("/summary/{zipcode}")
-def get_zip_summary(zipcode: str) -> dict:
+def get_zip_summary(
+    zipcode: str,
+    weight_housing: float = 0.40,
+    weight_walk: float = 0.20,
+    weight_transit: float = 0.15,
+    weight_education: float = 0.15,
+    weight_affordability: float = 0.10,
+    weight_lgbt: float = 0.0,
+) -> dict:
     normalized_zip = "".join(c for c in str(zipcode) if c.isdigit()).zfill(5)
     if len(normalized_zip) != 5:
         raise HTTPException(status_code=400, detail="ZIP code must be 5 digits.")
@@ -275,13 +283,30 @@ def get_zip_summary(zipcode: str) -> dict:
         )
     top_factors = [label for label, _ in factor_counts.most_common(5)]
 
+    weight_labels = {
+        "housing stability": weight_housing,
+        "walkability": weight_walk,
+        "transit": weight_transit,
+        "education": weight_education,
+        "affordability": weight_affordability,
+        "LGBT policy": weight_lgbt,
+    }
+    high_priority = [k for k, v in sorted(weight_labels.items(), key=lambda x: x[1], reverse=True) if v >= 0.25]
+    low_priority = [k for k, v in weight_labels.items() if v < 0.25]
+
+    weight_context = (
+        f"The user cares most about: {', '.join(high_priority)}. Focus the summary on these. "
+        f"For low-priority dimensions ({', '.join(low_priority)}), mention them neutrally or omit them — do not frame them as weaknesses."
+    ) if high_priority else "Give a balanced summary across all dimensions."
+
     prompt = (
         f"You are writing a plain-language neighborhood summary for ZIP code {normalized_zip}. "
         f"Write 3-4 sentences for someone considering moving there. Use cautious, practical "
         f"language. Avoid hype and jargon. Mention strengths and tradeoffs when appropriate.\n\n"
         f"Neighborhood scores (0-100 scale): {metrics}\n"
         f"Most common driving factors: {top_factors}\n"
-        f"Number of census tracts analyzed: {len(tract_df)}"
+        f"Number of census tracts analyzed: {len(tract_df)}\n\n"
+        f"User priorities: {weight_context}"
     )
 
     try:
