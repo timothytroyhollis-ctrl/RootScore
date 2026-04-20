@@ -301,7 +301,7 @@ function DimensionBar({ label, value }) {
           <p className="cursor-help text-sm font-semibold text-white underline decoration-dotted underline-offset-4">
             {label}
           </p>
-          <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-72 rounded-2xl bg-slate-950 px-4 py-3 text-xs leading-5 text-white shadow-xl group-hover:block">
+          <div className="pointer-events-none absolute left-full top-0 ml-2 hidden w-72 rounded-2xl bg-slate-950 px-4 py-3 text-xs leading-5 text-white shadow-xl group-hover:block" style={{ zIndex: 9999 }}>
             {dimensionTooltips[tooltipKey] ?? ""}
           </div>
         </div>
@@ -363,7 +363,7 @@ function QRootsSummaryCard({ overallScore, tract, summary, summaryLoading }) {
   }
 
   return (
-    <section className="mb-6 rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/50 backdrop-blur-lg">
+    <section className="mb-6 rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/50 backdrop-blur-lg overflow-visible">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex items-center gap-3">
