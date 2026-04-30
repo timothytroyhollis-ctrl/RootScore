@@ -1722,7 +1722,15 @@ Keep the existing card layout, icons, and dark glass styling. Just expand the
 description text to be more informative. Update app.jsx only.
 
 **Codex Output Summary:**
-*(to be completed after Codex runs)*
+Codex updated the description text in all three empty state feature cards on the
+Search tab. Card 1 expanded to mention ZIP and GEOID search, QRoots score, AI
+summary, choropleth map, SHAP driving factors, housing stability risk, and Find
+Housing links. Card 2 expanded to cover state selection, top 5/10/25 results, six
+dimension weights via sliders and direct percentage inputs, custom-weighted ranking,
+and Find Housing links on results. Card 3 expanded to describe weight-aware AI
+summaries that emphasize the user's top priorities plus contextual resource links
+for housing, schools, transit, mental health, and LGBT resources. No structural
+or styling changes — text content only.
 
 **Key Design Decisions:**
 - Empty state cards serve as the de facto feature overview for first-time users
@@ -1730,4 +1738,25 @@ description text to be more informative. Update app.jsx only.
 - No structural or styling changes — text content only
 - Targets contest judges who may not explore every feature organically
 
-**Next:** Final contest submission before April 30, 2026 deadline
+**Next:** Prompt 065 — Fix Apartments.com URL Format
+---
+
+## Prompt 065 — Fix Apartments.com URL Format
+**Date:** 2026-04-30
+**Purpose:** Fix broken Apartments.com rental link returning "can't find what
+you're looking for" on both Search and Explore tabs.
+
+**Prompt:**
+The Apartments.com link in HousingLinksSection uses ?s={zip} as a query parameter
+but that format is not supported by the site. Fix it to the correct path-based format.
+
+**Codex Output Summary:**
+Updated href in HousingLinksSection from `https://www.apartments.com/?s=${zip}`
+to `https://www.apartments.com/${zip}/`. Single one-line change that propagates
+to both ResultCard and ExplorerResultCard since both consume HousingLinksSection.
+
+**Key Design Decisions:**
+- Path-based URL is the correct Apartments.com format per their URL structure
+- Fix applied in one location rather than duplicated across two components
+
+**Next:** Contest submission complete — QRoots submitted to OpenAI Codex Contest 2026
