@@ -357,7 +357,7 @@ function HousingLinksSection({ zip }) {
   const rentLinks = [
     { label: "Zillow", href: `https://www.zillow.com/homes/for_rent/${zip}_rb/` },
     { label: "Realtor.com", href: `https://www.realtor.com/apartments/${zip}` },
-    { label: "Apartments.com", href: `https://www.apartments.com/${zip}/` },
+    { label: "ApartmentGuide.com", href: `https://www.apartmentguide.com/zip/${zip}-Apartments-For-Rent/` },
   ];
 
   return (

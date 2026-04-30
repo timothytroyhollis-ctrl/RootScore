@@ -1681,14 +1681,14 @@ other affected components as needed.
 
 **Codex Output Summary:**
 Codex created a HousingLinksSection component with deep links for Zillow (for sale
-and for rent), Realtor.com (for sale and for rent), and Apartments.com (for rent).
+and for rent), Realtor.com (for sale and for rent), and ApartmentGuide.com (for rent).
 Component renders null when no ZIP is available. Injected into both ResultCard and
 ExplorerResultCard above the Resources collapsible section. Styled with dark glass
 bg-black/30, amber-400 link color, and rounded-2xl to match existing UI.
 
 **Key Design Decisions:**
 - Deep links only — no external API calls, no billing risk, no env vars needed
-- All three major listing platforms covered: Zillow, Realtor.com, Apartments.com
+- All three major listing platforms covered: Zillow, Realtor.com, ApartmentGuide.com (for rent)
 - Section appears on both ResultCard and ExplorerResultCard for consistency
 - Links open in new tab to keep users in QRoots while browsing listings
 
