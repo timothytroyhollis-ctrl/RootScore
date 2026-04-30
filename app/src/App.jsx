@@ -347,6 +347,59 @@ function NeighborhoodSummaryCard({ summary, loading }) {
   );
 }
 
+function HousingLinksSection({ zip }) {
+  if (!zip) return null;
+
+  const saleLinks = [
+    { label: "Zillow", href: `https://www.zillow.com/homes/for_sale/${zip}_rb/` },
+    { label: "Realtor.com", href: `https://www.realtor.com/realestateandhomes-search/${zip}` },
+  ];
+  const rentLinks = [
+    { label: "Zillow", href: `https://www.zillow.com/homes/for_rent/${zip}_rb/` },
+    { label: "Realtor.com", href: `https://www.realtor.com/apartments/${zip}` },
+    { label: "Apartments.com", href: `https://www.apartments.com/${zip}/` },
+  ];
+
+  return (
+    <section className="mt-6 rounded-2xl border border-white/30 bg-black/30 p-4">
+      <div>
+        <p className="text-sm font-semibold text-white">Find Housing in This Area</p>
+        <p className="mt-1 text-xs font-semibold text-white">ZIP {zip}</p>
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white">For Sale</p>
+          {saleLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-sm font-medium text-amber-400 transition hover:bg-black/40 hover:text-amber-300"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <div className="grid gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white">For Rent</p>
+          {rentLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-sm font-medium text-amber-400 transition hover:bg-black/40 hover:text-amber-300"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function QRootsSummaryCard({ overallScore, tract, summary, summaryLoading }) {
   const [copied, setCopied] = useState(false);
   const tone = scoreTone(overallScore);
@@ -500,6 +553,8 @@ function ResultCard({ tract, zip }) {
         </ul>
       </div>
 
+      <HousingLinksSection zip={tractZip} />
+
       <div className="mt-6 rounded-2xl border border-white/30 bg-black/30">
         <button
           type="button"
@@ -618,6 +673,8 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
         <MiniDimensionBar label="Affordability" value={result.avg_affordability_score} />
         <MiniDimensionBar label="LGBT Policy" value={result.avg_lgbt_score} />
       </div>
+
+      <HousingLinksSection zip={result.zip} />
 
       <div className="mt-6 rounded-2xl border border-white/30 bg-black/30">
         <button

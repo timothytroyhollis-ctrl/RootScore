@@ -1652,4 +1652,44 @@ pass current exploreWeights as query params to the summary endpoint.
 - AI summary emphasizes dimensions the user weighted at 25% or above
 - Low-weighted dimensions mentioned neutrally or omitted in summary
 
-**Next:** Final contest submission on Handshake before April 30, 2026
+**Next:** Prompt 063 — Find Housing in This Area (Deep Links)
+
+---
+
+## Prompt 063 — Find Housing in This Area (Deep Links)
+**Date:** 2026-04-30
+**Purpose:** Add a "Find Housing in This Area" section to both the zip code search
+results and the explorer/tract results using deep links only — no API keys required.
+
+**Prompt:**
+Now add a "Find Housing in This Area" section to the results. Use deep links only — no API keys needed.
+
+For sale:
+- Zillow: https://www.zillow.com/homes/for_sale/{ZIP}_rb/
+- Realtor.com: https://www.realtor.com/realestateandhomes-search/{ZIP}
+
+For rent:
+- Zillow: https://www.zillow.com/homes/for_rent/{ZIP}_rb/
+- Realtor.com: https://www.realtor.com/apartments/{ZIP}
+- Apartments.com: https://www.apartments.com/{ZIP}/
+
+Show this section on both the zip code search results and the explore/tract results.
+Tie the ZIP to whatever the user searched or the tract they're exploring. Split into
+"For Sale" and "For Rent" subsections, open all links in a new tab. Use your best
+judgment on placement and styling to match the existing UI. Update app.jsx and any
+other affected components as needed.
+
+**Codex Output Summary:**
+Codex created a HousingLinksSection component with deep links for Zillow (for sale
+and for rent), Realtor.com (for sale and for rent), and Apartments.com (for rent).
+Component renders null when no ZIP is available. Injected into both ResultCard and
+ExplorerResultCard above the Resources collapsible section. Styled with dark glass
+bg-black/30, amber-400 link color, and rounded-2xl to match existing UI.
+
+**Key Design Decisions:**
+- Deep links only — no external API calls, no billing risk, no env vars needed
+- All three major listing platforms covered: Zillow, Realtor.com, Apartments.com
+- Section appears on both ResultCard and ExplorerResultCard for consistency
+- Links open in new tab to keep users in QRoots while browsing listings
+
+**Next:** Final contest submission before April 30, 2026 deadline
