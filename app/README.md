@@ -9,12 +9,12 @@ QRoots is a neighborhood quality-of-life and housing stability platform designed
 - ZIP code and census tract search
 - QRoots composite score on a 0-100 scale
 - Five core dimension scores: Housing Stability, Walkability, Transit, Education, Affordability
-- Explorer mode with six customizable dimension weight sliders that always sum to 100%
+- Explorer mode with six customizable dimension weight sliders that always sum to 100% and power ZIP ranking by user priorities
 - LGBT Policy score as an optional sixth Explorer dimension sourced from the Movement Advancement Project MAP state policy tally
 - Interactive choropleth map for ZIP-level tract exploration
 - SHAP explainability showing the top 3 driving factors behind each tract result
 - AI neighborhood summary powered by OpenAI `gpt-4o-mini`
-- Collapsible resource links on every result card with seven contextual links per neighborhood:
+- Collapsible resource links and housing-search deep links on every result card, including for-sale and for-rent listings plus contextual neighborhood support links:
   - housing assistance
   - walkability
   - transit
@@ -60,8 +60,8 @@ QRoots is a neighborhood quality-of-life and housing stability platform designed
 3. SHAP explanations identify the top 3 factors driving each tract’s risk prediction.
 4. A QRoots composite score is calculated on a 0-100 scale across five core dimensions: Housing Stability, Walkability, Transit, Education, and Affordability.
 5. ZIP-level search aggregates tract-level scores, generates a plain-language AI neighborhood summary, and updates the browser URL for easy sharing.
-6. The Explore tab lets users rank ZIP codes within a selected state by customizing six dimension weights and minimum thresholds.
-7. Result cards provide additional context through expandable neighborhood resource links tailored to each ZIP and state.
+6. The Explore tab lets users rank ZIP codes within a selected state by customizing six dimension weights that rebalance to a 100% total.
+7. Result cards provide additional context through expandable neighborhood resource links and direct housing search links tailored to each ZIP and state.
 
 ## QRoots Score Methodology
 

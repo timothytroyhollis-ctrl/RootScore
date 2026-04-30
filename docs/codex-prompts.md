@@ -1692,4 +1692,42 @@ bg-black/30, amber-400 link color, and rounded-2xl to match existing UI.
 - Section appears on both ResultCard and ExplorerResultCard for consistency
 - Links open in new tab to keep users in QRoots while browsing listings
 
+**Next:** Prompt 064 — Expand Empty State Feature Cards
+
+---
+
+## Prompt 064 — Expand Empty State Feature Cards
+**Date:** 2026-04-30
+**Purpose:** Update the three empty state cards on the Search tab to better
+describe all available features so users and contest judges understand the
+full scope of the tool on first load.
+
+**Prompt:**
+Update the three empty state feature cards on the Search tab to better describe
+what's available. Expand each card description to cover more features:
+
+Card 1 (Search Any Neighborhood): mention ZIP or GEOID search, QRoots score,
+AI summary, choropleth map, SHAP driving factors, housing stability risk, and
+Find Housing links.
+
+Card 2 (Explore by What Matters): mention state selection, top N results, six
+dimension weights via sliders or direct percentage inputs, custom-weighted
+ranking, and Find Housing links on each result.
+
+Card 3 (AI-Powered Insights): mention weight-aware summaries that focus on the
+user's top priorities, plus contextual resource links for housing, schools,
+transit, mental health, and LGBT resources.
+
+Keep the existing card layout, icons, and dark glass styling. Just expand the
+description text to be more informative. Update app.jsx only.
+
+**Codex Output Summary:**
+*(to be completed after Codex runs)*
+
+**Key Design Decisions:**
+- Empty state cards serve as the de facto feature overview for first-time users
+- Expanding descriptions avoids the need for a separate help section or modal
+- No structural or styling changes — text content only
+- Targets contest judges who may not explore every feature organically
+
 **Next:** Final contest submission before April 30, 2026 deadline

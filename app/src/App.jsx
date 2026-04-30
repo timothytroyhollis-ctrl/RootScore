@@ -1237,7 +1237,8 @@ const normalizedWeights = totalWeight > 0
                     <h2 className="mt-5 text-xl font-semibold text-white">Search Any Neighborhood</h2>
                     <p className="mt-3 text-base leading-7 font-semibold text-white">
                       Enter a ZIP code or census tract GEOID to get an instant QRoots score,
-                      housing stability risk, AI summary, and interactive map.
+                      housing stability risk, weight-aware AI summary, interactive choropleth
+                      map, SHAP driving factors, and direct Find Housing links for the area.
                     </p>
                   </article>
 
@@ -1247,8 +1248,9 @@ const normalizedWeights = totalWeight > 0
                     </div>
                     <h2 className="mt-5 text-xl font-semibold text-white">Explore by What Matters</h2>
                     <p className="mt-3 text-base leading-7 font-semibold text-white">
-                      Use Explore mode to rank every ZIP code in any state by six customizable
-                      dimensions including walkability, affordability, and LGBT policy.
+                      Use Explore mode to pick a state, choose your top N matches, adjust six
+                      dimension weights with sliders or direct percentage inputs, see a custom-
+                      weighted ranking, and open Find Housing links on every result.
                     </p>
                   </article>
 
@@ -1258,8 +1260,9 @@ const normalizedWeights = totalWeight > 0
                     </div>
                     <h2 className="mt-5 text-xl font-semibold text-white">AI-Powered Insights</h2>
                     <p className="mt-3 text-base leading-7 font-semibold text-white">
-                      Every ZIP search generates a plain-language neighborhood summary powered
-                      by OpenAI, plus contextual resource links tailored to that location.
+                      Every ZIP search generates a weight-aware neighborhood summary that
+                      emphasizes your top priorities, plus contextual links for housing,
+                      schools, transit, mental health, and LGBT resources.
                     </p>
                   </article>
                 </section>
@@ -1291,7 +1294,7 @@ const normalizedWeights = totalWeight > 0
             View the GitHub repository →
           </a>
           <div className="mt-4 border-t border-slate-200 pt-4 text-center text-xs font-semibold text-white">
-            Built with OpenAI Codex — see the full 40+ prompt log{" "}
+            Built with OpenAI Codex — see the full 64+ prompt log{" "}
             <a
               href="https://github.com/timothytroyhollis-ctrl/QRoots/blob/main/docs/codex-prompts.md"
               target="_blank"
