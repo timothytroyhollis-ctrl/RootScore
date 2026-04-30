@@ -1738,25 +1738,30 @@ or styling changes — text content only.
 - No structural or styling changes — text content only
 - Targets contest judges who may not explore every feature organically
 
-**Next:** Prompt 065 — Fix Apartments.com URL Format
+**Next:** Prompt 065 — Fix Rental Link: Swap Apartments.com for ApartmentGuide.com
+
 ---
 
-## Prompt 065 — Fix Apartments.com URL Format
+## Prompt 065 — Fix Rental Link: Swap Apartments.com for ApartmentGuide.com
 **Date:** 2026-04-30
-**Purpose:** Fix broken Apartments.com rental link returning "can't find what
-you're looking for" on both Search and Explore tabs.
+**Purpose:** Fix broken rental listing link. Apartments.com requires a city slug
+in the URL (e.g. /san-antonio-tx-78229/) and does not support bare ZIP-only paths,
+causing a "can't find what you're looking for" error on all searches.
 
 **Prompt:**
-The Apartments.com link in HousingLinksSection uses ?s={zip} as a query parameter
-but that format is not supported by the site. Fix it to the correct path-based format.
+The Apartments.com link in HousingLinksSection fails because their URL format
+requires a city name slug, not just a ZIP code. Replace it with ApartmentGuide.com
+which supports a simple ZIP-only URL format.
 
 **Codex Output Summary:**
-Updated href in HousingLinksSection from `https://www.apartments.com/?s=${zip}`
-to `https://www.apartments.com/${zip}/`. Single one-line change that propagates
-to both ResultCard and ExplorerResultCard since both consume HousingLinksSection.
+Replaced Apartments.com with ApartmentGuide.com in the rentLinks array inside
+HousingLinksSection. Updated href from `https://www.apartments.com/${zip}/` to
+`https://www.apartmentguide.com/zip/${zip}-Apartments-For-Rent/`. Single one-line
+change that propagates to both ResultCard and ExplorerResultCard automatically.
 
 **Key Design Decisions:**
-- Path-based URL is the correct Apartments.com format per their URL structure
-- Fix applied in one location rather than duplicated across two components
+- Apartments.com rejected because their URL requires city slug not bare ZIP
+- ApartmentGuide.com confirmed to work with ZIP-only path for any US ZIP code
+- Fix applied in one location (HousingLinksSection) — both tabs covered automatically
 
 **Next:** Contest submission complete — QRoots submitted to OpenAI Codex Contest 2026
